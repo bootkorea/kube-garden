@@ -6,7 +6,7 @@ interface LoginPageProps {
 
 export default function LoginPage({ onLogin }: LoginPageProps) {
   return (
-    // [수정] w-screen h-screen overflow-hidden으로 화면 전체 강제 고정
+    // Force the layout to occupy the full viewport
     <div className="flex h-screen w-screen items-center justify-center overflow-hidden bg-stone-50">
       <div className="w-full max-w-md rounded-3xl bg-white p-10 shadow-xl shadow-stone-200/50">
         <div className="mb-8 text-center">

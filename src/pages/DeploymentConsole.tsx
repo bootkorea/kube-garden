@@ -1,17 +1,31 @@
 import { useState, useRef, useEffect } from 'react';
-import { Play, CheckCircle, Loader2, ShieldCheck, Terminal, Activity, ArrowLeft, Check, Sprout, Trees, Flower2 } from 'lucide-react';
+import { Play, CheckCircle, Loader2, ShieldCheck, Terminal, Activity, ArrowLeft, Check, Sprout, Trees, Flower2, Bot, Sparkles } from 'lucide-react';
 import { LineChart, Line, XAxis, YAxis, Tooltip, ResponsiveContainer } from 'recharts';
-import confetti from 'canvas-confetti'; // 폭죽 효과
-import toast, { Toaster } from 'react-hot-toast'; // 토스트 알림
+import confetti from 'canvas-confetti'; // celebratory confetti
+import toast, { Toaster } from 'react-hot-toast'; // toast notifications
 
-// --- 1. 헬퍼 함수 ---
+// --- Helpers ---
 const sleep = (ms: number) => new Promise((resolve) => setTimeout(resolve, ms));
 
-// --- 2. 내부 컴포넌트 ---
+type LogMeta = {
+  role: 'agent' | 'user' | 'system';
+  text: string;
+};
 
-// [NEW] 식물 성장 애니메이션 컴포넌트
+const parseLogEntry = (entry: string): LogMeta => {
+  if (entry.startsWith('AI Agent:')) {
+    return { role: 'agent', text: entry.replace('AI Agent:', '').trim() };
+  }
+  if (entry.startsWith('User:')) {
+    return { role: 'user', text: entry.replace('User:', '').trim() };
+  }
+  return { role: 'system', text: entry };
+};
+
+// --- Visual components ---
+
+// Plant growth animation
 const GrowingPlant = ({ status }: { status: string }) => {
-  // 상태에 따라 아이콘과 색상 변경
   let Icon = Sprout;
   let color = "text-slate-300 bg-slate-100";
   let scale = "scale-100";
@@ -87,8 +101,7 @@ const MetricsChart = () => {
   );
 };
 
-// --- 3. 메인 페이지 컴포넌트 ---
-
+// --- Main component ---
 interface DeploymentConsoleProps {
   onBack: () => void;
 }
@@ -105,7 +118,7 @@ export default function DeploymentConsole({ onBack }: DeploymentConsoleProps) {
   const handleDeploy = async () => {
     if (status !== 'idle') return;
 
-    // [Event] 시작 토스트
+    // Toast: deployment initialized
     toast.loading('Initializing Deployment Agent...', { id: 'deploy-toast' });
 
     setStatus('planning');
@@ -113,20 +126,20 @@ export default function DeploymentConsole({ onBack }: DeploymentConsoleProps) {
     
     await sleep(1000); 
 
-    // [Event] 단계 변경
+    // Toast: phase progression
     toast.success('Plan Created! Running Tests.', { id: 'deploy-toast' });
     setStatus('running');
     setLogs(prev => [...prev, "AI Agent: Plan approved. Starting pipeline...", "Running Tests & Lint..."]);
     
     await sleep(1500); 
 
-    // [Event] 보안 스캔 완료
+    // Toast: security scan finished
     toast.success('Security Clean. Rolling out Canary.', { id: 'deploy-toast' });
     setLogs(prev => [...prev, "Security Scan passed (Trivy).", "Rolling out 10% traffic (Argo Rollouts)..."]);
     
     await sleep(1500); 
 
-    // [Event] 성공
+    // Toast: deployment succeeded
     toast.success('Canary Deployment Live!', { id: 'deploy-toast' });
     setStatus('success');
     setLogs(prev => [...prev, "AI Agent: Metrics collected. Latency improved by 15%. Promotion recommended."]);
@@ -137,7 +150,7 @@ export default function DeploymentConsole({ onBack }: DeploymentConsoleProps) {
     
     await sleep(1000);
     
-    // [Event] 화려한 폭죽 효과 (Confetti)
+    // Fire celebratory confetti
     confetti({
       particleCount: 150,
       spread: 70,
@@ -167,7 +180,7 @@ export default function DeploymentConsole({ onBack }: DeploymentConsoleProps) {
 
   return (
     <div className="flex h-full w-full overflow-hidden bg-stone-50">
-      {/* [NEW] 토스트 컨테이너 추가 */}
+      {/* Toast container */}
       <Toaster position="top-center" reverseOrder={false} />
 
       {/* Left Panel */}
@@ -187,7 +200,7 @@ export default function DeploymentConsole({ onBack }: DeploymentConsoleProps) {
 
         <div className="flex-1 overflow-y-auto p-8">
             <div className="space-y-6">
-                {/* [NEW] 성장하는 식물 애니메이션 위치 */}
+                {/* Animated plant visualization */}
                 <GrowingPlant status={status} />
 
                 <div>
@@ -232,16 +245,45 @@ export default function DeploymentConsole({ onBack }: DeploymentConsoleProps) {
       <div className="flex w-1/2 flex-col bg-stone-100">
         <div className="flex-1 overflow-y-auto p-8">
           <div className="flex flex-col gap-4">
-            {logs.map((log, idx) => (
-                <div key={idx} className={`flex ${log.startsWith("User") ? "justify-end" : "justify-start"}`}>
-                <div className={`max-w-[85%] rounded-2xl px-5 py-4 text-sm shadow-sm animate-in slide-in-from-bottom-2
-                    ${log.startsWith("User") 
-                        ? "bg-slate-800 text-white rounded-tr-none" 
-                        : "bg-white text-slate-700 rounded-tl-none border border-slate-100"}`}>
-                    {log}
+            {logs.map((log, idx) => {
+              const meta = parseLogEntry(log);
+              const isAgent = meta.role === 'agent';
+              const isUser = meta.role === 'user';
+              const alignment = isUser ? 'justify-end' : 'justify-start';
+              const rowDirection = isUser ? 'flex-row-reverse text-right' : '';
+              const bubbleBase = 'max-w-[85%] rounded-3xl px-5 py-4 text-sm shadow-sm animate-in slide-in-from-bottom-2';
+              const bubbleStyles = isUser
+                ? 'bg-slate-900 text-white rounded-tr-none'
+                : isAgent
+                  ? 'bg-white text-slate-800 rounded-tl-none border border-emerald-100'
+                  : 'bg-white text-slate-600 rounded-tl-none border border-slate-100';
+
+              return (
+                <div key={idx} className={`flex ${alignment}`}>
+                  <div className={`flex items-start gap-3 ${rowDirection}`}>
+                    {isAgent && (
+                      <div className="relative flex h-12 w-12 items-center justify-center rounded-3xl bg-emerald-50 text-emerald-600 shadow-inner shadow-emerald-100">
+                        <Bot size={20} strokeWidth={1.5} />
+                        <span className="absolute -bottom-1 -right-1 text-lg" role="img" aria-label="garden spark">
+                          🌼
+                        </span>
+                      </div>
+                    )}
+                    <div className={`${bubbleBase} ${bubbleStyles}`}>
+                      {(isAgent || isUser) && (
+                        <span
+                          className={`mb-2 inline-flex items-center gap-1 text-xs font-semibold ${isAgent ? 'text-emerald-600' : 'text-slate-300'}`}
+                        >
+                          {isAgent && <Sparkles size={12} />}
+                          {isAgent ? 'AI Agent' : 'You'}
+                        </span>
+                      )}
+                      <p>{meta.text}</p>
+                    </div>
+                  </div>
                 </div>
-                </div>
-            ))}
+              );
+            })}
             <div ref={logsEndRef} />
           </div>
         </div>

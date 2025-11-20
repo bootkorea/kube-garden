@@ -1,4 +1,4 @@
-import { Sprout, History, Settings, LogOut, LayoutDashboard } from 'lucide-react';
+import { Sprout, History, Settings, LogOut, LayoutDashboard, Rocket } from 'lucide-react';
 
 interface NavbarProps {
   currentPage: string;
@@ -9,6 +9,7 @@ interface NavbarProps {
 export default function Navbar({ currentPage, onNavigate, onLogout }: NavbarProps) {
   const navItems = [
     { id: 'dashboard', label: 'Dashboard', icon: LayoutDashboard },
+    { id: 'launch', label: 'Deploy', icon: Rocket },
     { id: 'history', label: 'History', icon: History },
     { id: 'settings', label: 'Settings', icon: Settings },
   ];

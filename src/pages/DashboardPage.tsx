@@ -1,6 +1,6 @@
 import { Leaf, AlertCircle, ArrowRight } from 'lucide-react';
 
-// --- (이전과 동일한 타입 정의 및 Mock Data) ---
+// --- Type definitions & mock data ---
 interface Service {
   id: number;
   name: string;
@@ -22,7 +22,7 @@ interface ServiceCardProps {
 
 const ServiceCard = ({ service, onManage }: ServiceCardProps) => {
   const isHealthy = service.status === 'healthy';
-  // --- (ServiceCard 내부 코드는 이전과 동일하므로 생략 가능하나, 복붙 편의를 위해 유지) ---
+  // ServiceCard UI
   return (
     <div className={`
       relative overflow-hidden rounded-2xl border-2 p-6 transition-all hover:shadow-lg
@@ -67,15 +67,27 @@ const ServiceCard = ({ service, onManage }: ServiceCardProps) => {
 
 interface DashboardPageProps {
   onManage: () => void;
+  onStartDeploy: () => void;
 }
 
-export default function DashboardPage({ onManage }: DashboardPageProps) {
+export default function DashboardPage({ onManage, onStartDeploy }: DashboardPageProps) {
   return (
-    // [수정 포인트] min-h-screen을 제거하고 min-h-full로 변경하여 부모 높이에 맞춤
+    // Fill available height so the parent container keeps layout tight
     <div className="min-h-full bg-stone-50 p-8">
       <header className="mb-10">
         <h1 className="text-3xl font-bold text-slate-800">My Digital Garden 🌿</h1>
         <p className="text-slate-500">Manage your Kubernetes deployments with peace of mind.</p>
+        <div className="mt-6 flex flex-wrap gap-3">
+          <button
+            onClick={onStartDeploy}
+            className="inline-flex items-center gap-2 rounded-2xl bg-slate-900 px-6 py-3 text-sm font-bold text-white shadow-lg shadow-slate-300 transition hover:bg-slate-700"
+          >
+            🌱 Start Deployment
+          </button>
+          <button className="inline-flex items-center gap-2 rounded-2xl border border-slate-200 px-6 py-3 text-sm font-bold text-slate-600 transition hover:border-slate-300 hover:bg-white">
+            View AWS Architecture
+          </button>
+        </div>
       </header>
       
       <div className="grid grid-cols-1 gap-6 md:grid-cols-2 lg:grid-cols-3">
