@@ -1,0 +1,70 @@
+name: Build and Push Docker Image
+
+on:
+  workflow_dispatch:
+    inputs:
+      deployment_id:
+        description: 'Deployment ID from Kube-Garden'
+        required: true
+        type: string
+      environment:
+        description: 'Target environment'
+        required: true
+        type: string
+        default: 'production'
+      service_name:
+        description: 'Service name'
+        required: true
+        type: string
+
+env:
+  AWS_REGION: ap-northeast-2
+  ECR_REPOSITORY: kube-garden-services
+
+jobs:
+  build-and-push:
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+      id-token: write
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Configure AWS credentials
+        uses: aws-actions/configure-aws-credentials@v4
+        with:
+          role-to-assume: ${{ secrets.AWS_ROLE_ARN }}
+          aws-region: ${{ env.AWS_REGION }}
+
+      - name: Login to Amazon ECR
+        id: login-ecr
+        uses: aws-actions/amazon-ecr-login@v2
+
+      - name: Build Docker image
+        env:
+          ECR_REGISTRY: ${{ steps.login-ecr.outputs.registry }}
+          IMAGE_TAG: ${{ github.sha }}
+        run: |
+          docker build -t $ECR_REGISTRY/$ECR_REPOSITORY:$IMAGE_TAG .
+          docker build -t $ECR_REGISTRY/$ECR_REPOSITORY:latest .
+
+      - name: Push Docker image to ECR
+        env:
+          ECR_REGISTRY: ${{ steps.login-ecr.outputs.registry }}
+          IMAGE_TAG: ${{ github.sha }}
+        run: |
+          docker push $ECR_REGISTRY/$ECR_REPOSITORY:$IMAGE_TAG
+          docker push $ECR_REGISTRY/$ECR_REPOSITORY:latest
+
+      - name: Update deployment status in DynamoDB
+        env:
+          DEPLOYMENT_ID: ${{ inputs.deployment_id }}
+          IMAGE_TAG: ${{ github.sha }}
+        run: |
+          aws dynamodb update-item \
+            --table-name ${{ secrets.DEPLOYMENTS_TABLE_NAME }} \
+            --key "{\"id\": {\"S\": \"$DEPLOYMENT_ID\"}}" \
+            --update-expression "SET buildStatus = :status, imageTag = :tag, updatedAt = :time" \
+            --expression-attribute-values "{\":status\": {\"S\": \"success\"}, \":tag\": {\"S\": \"$IMAGE_TAG\"}, \":time\": {\"N\": \"$(date +%s)000\"}}"
