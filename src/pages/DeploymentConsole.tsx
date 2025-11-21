@@ -257,15 +257,20 @@ export default function DeploymentConsole({ onBack, deploymentConfig }: Deployme
         }
 
         // Only update logs if status has changed
-        if (currentStatus !== lastStatusRef.current) {
-          lastStatusRef.current = currentStatus;
+        // Check buildStatus as well since webhook updates it
+        const effectiveStatus = (deployment.buildStatus === 'success' && currentStatus === 'BUILD_TRIGGERED')
+          ? 'BUILD_COMPLETED'
+          : currentStatus;
 
-          if (currentStatus === 'BUILD_TRIGGERED') {
+        if (effectiveStatus !== lastStatusRef.current) {
+          lastStatusRef.current = effectiveStatus;
+
+          if (effectiveStatus === 'BUILD_TRIGGERED') {
             setLogs(prev => [...prev, "Build triggered via GitHub Actions..."]);
-          } else if (currentStatus === 'BUILD_COMPLETED') {
+          } else if (effectiveStatus === 'BUILD_COMPLETED') {
             setLogs(prev => [...prev, "Build completed successfully!", "Security Scan passed (Trivy).", "Rolling out canary deployment..."]);
             toast.success('Security Clean. Rolling out Canary.', { id: 'deploy-toast' });
-          } else if (currentStatus === 'DEPLOYED_TO_EKS' || currentStatus === 'SUCCESS' || currentStatus === 'IMAGE_VALIDATED') {
+          } else if (effectiveStatus === 'DEPLOYED_TO_EKS' || effectiveStatus === 'SUCCESS' || effectiveStatus === 'IMAGE_VALIDATED') {
             setStatus('success');
             setLogs(prev => [...prev, "AI Agent: Deployment successful! Canary is live."]);
             toast.success('Canary Deployment Live!', { id: 'deploy-toast' });
