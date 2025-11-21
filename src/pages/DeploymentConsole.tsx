@@ -41,11 +41,11 @@ const GrowingPlant = ({ status }: { status: string }) => {
   } else if (status === 'success') {
     Icon = Trees;
     color = "text-green-700 bg-green-200";
-    scale = "scale-150";
+    scale = "scale-125";
   }
 
   return (
-    <div className="flex flex-col items-center justify-center py-6 transition-all duration-500">
+    <div className="flex flex-col items-center justify-center py-8 transition-all duration-500">
       <div className={`flex h-24 w-24 items-center justify-center rounded-full border-4 border-white shadow-xl transition-all duration-500 ${color} ${scale}`}>
         <Icon size={48} strokeWidth={1.5} />
       </div>

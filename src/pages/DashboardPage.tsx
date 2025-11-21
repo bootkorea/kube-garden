@@ -1,4 +1,4 @@
-import { Leaf, AlertCircle, ArrowRight } from 'lucide-react';
+import { Leaf, AlertCircle, ArrowRight, Sprout } from 'lucide-react';
 
 // --- Type definitions & mock data ---
 interface Service {
@@ -8,11 +8,12 @@ interface Service {
   version: string;
   pods: number;
   lastDeploy: string;
+  position: { x: number; y: number }; // Position on garden (percentage)
 }
 
 const services: Service[] = [
-  { id: 1, name: 'demo-api', status: 'healthy', version: 'v1.0.2', pods: 3, lastDeploy: '2h ago' },
-  { id: 2, name: 'demo-frontend', status: 'warning', version: 'v2.1.0', pods: 2, lastDeploy: '1d ago' },
+  { id: 1, name: 'demo-api', status: 'healthy', version: 'v1.0.2', pods: 3, lastDeploy: '2h ago', position: { x: 25, y: 50 } },
+  { id: 2, name: 'demo-frontend', status: 'warning', version: 'v2.1.0', pods: 2, lastDeploy: '1d ago', position: { x: 75, y: 50 } },
 ];
 
 interface ServiceCardProps {
@@ -57,7 +58,7 @@ const ServiceCard = ({ service, onManage }: ServiceCardProps) => {
       </div>
       <button 
         onClick={onManage}
-        className="mt-6 flex w-full items-center justify-center gap-2 rounded-xl bg-slate-900 py-3 text-sm font-bold text-white transition-colors hover:bg-slate-700"
+        className="mt-6 flex w-full items-center justify-center gap-2 rounded-xl bg-slate-900 py-3 text-sm font-bold text-white transition-all hover:bg-green-600 hover:shadow-lg hover:shadow-green-200"
       >
         Manage Garden <ArrowRight size={16} />
       </button>
@@ -74,22 +75,67 @@ export default function DashboardPage({ onManage, onStartDeploy }: DashboardPage
   return (
     // Fill available height so the parent container keeps layout tight
     <div className="min-h-full bg-stone-50 p-8">
-      <header className="mb-10">
-        <h1 className="text-3xl font-bold text-slate-800">My Digital Garden 🌿</h1>
-        <p className="text-slate-500">Manage your Kubernetes deployments with peace of mind.</p>
-        <div className="mt-6 flex flex-wrap gap-3">
-          <button
-            onClick={onStartDeploy}
-            className="inline-flex items-center gap-2 rounded-2xl bg-slate-900 px-6 py-3 text-sm font-bold text-white shadow-lg shadow-slate-300 transition hover:bg-slate-700"
-          >
-            🌱 Start Deployment
-          </button>
-          <button className="inline-flex items-center gap-2 rounded-2xl border border-slate-200 px-6 py-3 text-sm font-bold text-slate-600 transition hover:border-slate-300 hover:bg-white">
-            View AWS Architecture
-          </button>
+      <header className="mb-8 flex flex-col gap-4 md:flex-row md:items-center md:justify-between">
+        <div>
+          <h1 className="text-3xl font-bold text-slate-800">My Digital Garden 🌿</h1>
+          <p className="text-slate-500">Manage your Kubernetes deployments with peace of mind.</p>
         </div>
+        <button
+          onClick={onStartDeploy}
+          className="inline-flex items-center justify-center gap-2 rounded-2xl bg-slate-900 px-6 py-3 text-sm font-bold text-white shadow-lg shadow-slate-300 transition-all hover:bg-green-600 hover:shadow-green-200"
+        >
+          🌱 Start Deployment
+        </button>
       </header>
       
+      {/* Garden Visualization */}
+      <div className="mb-10 relative w-full max-w-2xl rounded-3xl overflow-hidden shadow-xl" style={{ aspectRatio: '16/8' }}>
+        <img 
+          src="/garden.png" 
+          alt="Digital Garden" 
+          className="w-full h-full object-cover"
+        />
+        {/* Sprouts positioned on the garden */}
+        {services.map((service) => {
+          const isHealthy = service.status === 'healthy';
+          return (
+            <div
+              key={service.id}
+              className="absolute group cursor-pointer transition-all hover:scale-125"
+              style={{
+                left: `${service.position.x}%`,
+                top: `${service.position.y}%`,
+                transform: 'translate(-50%, -50%)',
+              }}
+              onClick={() => onManage()}
+            >
+              <div className="relative">
+                <div className={`rounded-full p-3 shadow-lg transition-all ${
+                  isHealthy 
+                    ? 'bg-green-100 text-green-600 border-2 border-green-300' 
+                    : 'bg-amber-100 text-amber-600 border-2 border-amber-300'
+                }`}>
+                  <Sprout size={32} strokeWidth={2} />
+                </div>
+                {/* Tooltip on hover */}
+                <div className="absolute bottom-full left-1/2 transform -translate-x-1/2 mb-2 opacity-0 group-hover:opacity-100 transition-opacity pointer-events-none">
+                  <div className="bg-slate-900 text-white text-xs font-bold px-3 py-2 rounded-lg whitespace-nowrap shadow-lg">
+                    {service.name}
+                    <div className={`text-[10px] mt-1 ${
+                      isHealthy ? 'text-green-300' : 'text-amber-300'
+                    }`}>
+                      {service.status.toUpperCase()}
+                    </div>
+                    <div className="absolute bottom-0 left-1/2 transform -translate-x-1/2 translate-y-full w-0 h-0 border-l-4 border-r-4 border-t-4 border-transparent border-t-slate-900"></div>
+                  </div>
+                </div>
+              </div>
+            </div>
+          );
+        })}
+      </div>
+      
+      {/* Service Cards */}
       <div className="grid grid-cols-1 gap-6 md:grid-cols-2 lg:grid-cols-3">
         {services.map((svc) => (
           <ServiceCard key={svc.id} service={svc} onManage={onManage} />

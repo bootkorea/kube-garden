@@ -13,7 +13,7 @@ export default function LoginPage({ onLogin }: LoginPageProps) {
           <div className="mx-auto mb-4 flex h-16 w-16 items-center justify-center rounded-full bg-green-100 text-green-600">
             <KeyRound size={32} />
           </div>
-          <h1 className="text-2xl font-bold text-slate-800">Kube-Garden</h1>
+          <h1 className="font-logo text-3xl font-bold text-slate-800">Kube Garden</h1>
           <p className="mt-2 text-slate-500">Enter your access token to manage your digital garden.</p>
         </div>
 
@@ -36,7 +36,7 @@ export default function LoginPage({ onLogin }: LoginPageProps) {
         </div>
         
         <p className="mt-8 text-center text-xs text-slate-400">
-          Powered by AI Deployment Agent & Argo Rollouts
+          Designed by term2 Bear Team @ Softbank Hackathon
         </p>
       </div>
     </div>

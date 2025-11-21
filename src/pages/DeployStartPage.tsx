@@ -64,7 +64,7 @@ export default function DeployStartPage({ onStartDeploy, onBack }: DeployStartPa
           <div className="flex flex-col gap-3 sm:flex-row">
             <button
               onClick={onStartDeploy}
-              className="flex items-center justify-center gap-2 rounded-2xl bg-slate-900 px-8 py-4 text-lg font-bold text-white shadow-lg shadow-slate-300 transition hover:bg-slate-700"
+              className="flex items-center justify-center gap-2 rounded-2xl bg-slate-900 px-8 py-4 text-lg font-bold text-white shadow-lg shadow-slate-300 transition-all hover:bg-green-600 hover:shadow-green-200"
             >
               <Rocket size={20} />
               Deploy with Agent

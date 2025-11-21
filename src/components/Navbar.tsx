@@ -24,7 +24,7 @@ export default function Navbar({ currentPage, onNavigate, onLogout }: NavbarProp
         <div className="flex h-8 w-8 items-center justify-center rounded-lg bg-green-100 text-green-600">
           <Sprout size={20} />
         </div>
-        <span className="text-lg font-bold text-slate-800">Kube-Garden</span>
+        <span className="text-2xl text-slate-800 font-logo font-bold">Kube Garden</span>
       </div>
 
       {/* Menu Links */}
@@ -33,7 +33,7 @@ export default function Navbar({ currentPage, onNavigate, onLogout }: NavbarProp
           <button
             key={item.id}
             onClick={() => onNavigate(item.id)}
-            className={`flex items-center gap-2 px-4 py-2 rounded-lg text-sm font-bold transition-all
+            className={`flex items-center gap-2 px-4 py-2 rounded-lg text-sm font-bold transition-all ring-2 ring-transparent hover:ring-slate-400 focus:outline-none focus:ring-2 focus:ring-green-500 focus:ring-offset-2 focus:ring-offset-slate-100
               ${currentPage === item.id 
                 ? 'bg-white text-green-700 shadow-sm' 
                 : 'text-slate-500 hover:text-slate-800 hover:bg-slate-200/50'
