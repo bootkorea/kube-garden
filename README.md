@@ -48,13 +48,25 @@ npm run preview
 ## Project Structure
 
 ```
-src/
-├── main.tsx                 # App entry
-├── pages/
-│   ├── DashboardPage.tsx    # Garden view of services
-│   └── DeploymentConsole.tsx# AI agent rollout console
-└── components/              # Shared UI widgets
+kube-garden-fe/
+├── src/                        # Frontend source code
+│   ├── main.tsx                # App entry
+│   ├── pages/
+│   │   ├── DashboardPage.tsx   # Garden view of services
+│   │   ├── DeploymentConsole.tsx # AI agent rollout console
+│   │   └── HistoryPage.tsx     # Deployment history
+│   └── components/             # Shared UI widgets
+├── docs/                       # API documentation
+│   └── README.md               # Backend API reference
+└── package.json                # Frontend dependencies
 ```
+
+## Backend API
+
+프론트엔드는 서버리스 백엔드 API를 호출합니다.  
+API 엔드포인트 및 사용법은 [docs/README.md](./docs/README.md)을 참고하세요.
+
+**API Base URL**: `.env` 파일에서 `VITE_API_URL` 설정
 
 ## Key Screens
 
