@@ -243,6 +243,19 @@ export default function DeploymentConsole({ onBack, deploymentConfig }: Deployme
         const deployment = data.deployment || data; // Handle both {deployment: {...}} and direct object
         const currentStatus = deployment.status;
 
+        console.log('Poll response:', deployment);
+
+        // Fallback: if error exists, treat as failed
+        if (deployment.error && !currentStatus?.includes('SUCCESS') && !currentStatus?.includes('DEPLOYED')) {
+          if (currentStatus !== lastStatusRef.current) {
+            lastStatusRef.current = currentStatus;
+            setStatus('failed');
+            setLogs(prev => [...prev, `Deployment failed: ${deployment.error}`]);
+            toast.error('Deployment Failed', { id: 'deploy-toast' });
+            return;
+          }
+        }
+
         // Only update logs if status has changed
         if (currentStatus !== lastStatusRef.current) {
           lastStatusRef.current = currentStatus;
@@ -359,11 +372,13 @@ export default function DeploymentConsole({ onBack, deploymentConfig }: Deployme
                       ${status === 'idle' ? 'bg-green-600 shadow-green-200 hover:bg-green-700' : ''}
                       ${isProcessing ? 'bg-slate-400 shadow-none cursor-not-allowed' : ''}
                       ${isSuccess ? 'bg-green-800 shadow-none cursor-not-allowed' : ''}
+                      ${isFailed ? 'bg-red-600 shadow-none cursor-not-allowed' : ''}
                     `}
             >
               {status === 'idle' && <><Play size={20} /> Deploy with Agent</>}
               {isProcessing && <><Loader2 className="animate-spin" /> Processing...</>}
               {isSuccess && <><Check size={20} /> Deployment Ready</>}
+              {isFailed && <><AlertCircle size={20} /> Deployment Failed</>}
             </button>
 
             {/* Timeline Status */}
