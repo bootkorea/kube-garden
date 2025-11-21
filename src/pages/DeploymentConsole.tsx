@@ -240,13 +240,23 @@ export default function DeploymentConsole({ onBack, deploymentConfig }: Deployme
         const data = await response.json();
         const deployment = data.deployment || data; // Handle both {deployment: {...}} and direct object
 
-        // Update logs based on status
+        // Only update logs if status has changed or it's a new deployment
+        // We can use a ref or just check the last log message, but checking status transition is safer if we had state for it.
+        // For now, let's just check if we already logged this state to avoid spam.
+
+        const lastLog = logs[logs.length - 1];
+
         if (deployment.status === 'BUILD_TRIGGERED') {
-          setLogs(prev => [...prev, "Build triggered via GitHub Actions..."]);
+          if (!lastLog?.includes("Build triggered")) {
+            setLogs(prev => [...prev, "Build triggered via GitHub Actions..."]);
+          }
         } else if (deployment.status === 'BUILD_COMPLETED') {
-          setLogs(prev => [...prev, "Build completed successfully!", "Security Scan passed (Trivy).", "Rolling out canary deployment..."]);
-          toast.success('Security Clean. Rolling out Canary.', { id: 'deploy-toast' });
+          if (!lastLog?.includes("Build completed")) {
+            setLogs(prev => [...prev, "Build completed successfully!", "Security Scan passed (Trivy).", "Rolling out canary deployment..."]);
+            toast.success('Security Clean. Rolling out Canary.', { id: 'deploy-toast' });
+          }
         } else if (deployment.status === 'DEPLOYED_TO_EKS' || deployment.status === 'SUCCESS' || deployment.status === 'IMAGE_VALIDATED') {
+          // This is a terminal state for this polling loop, so we handle it once and return
           setStatus('success');
           setLogs(prev => [...prev, "AI Agent: Deployment successful! Canary is live."]);
           toast.success('Canary Deployment Live!', { id: 'deploy-toast' });
