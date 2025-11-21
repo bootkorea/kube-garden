@@ -39,10 +39,12 @@ export default function HistoryPage() {
     }
 
     try {
-      const response = await fetch(`${API_URL}/deployments`);
-      if (!response.ok) throw new Error('Failed to fetch deployments');
-      const data = await response.json();
-      setDeployments(data || []);
+      // Endpoint removed in v4 - no global deployments list
+      // const response = await fetch(`${API_URL}/deployments`);
+      // if (!response.ok) throw new Error('Failed to fetch deployments');
+      // const data = await response.json();
+      // setDeployments(data || []);
+      setDeployments([]);
     } catch (err: any) {
       setError(err.message);
     } finally {
@@ -59,7 +61,7 @@ export default function HistoryPage() {
     }
 
     try {
-      const response = await fetch(`${API_URL}/deployments/${deploymentId}`, {
+      const response = await fetch(`${API_URL}/deploy/${deploymentId}`, {
         method: 'DELETE',
       });
 

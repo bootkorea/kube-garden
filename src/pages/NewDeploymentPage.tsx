@@ -66,7 +66,7 @@ export default function NewDeploymentPage({ onStartDeploy, onBack }: NewDeployme
 
                         <div>
                             <label className="block text-sm font-bold text-slate-700 mb-2">
-                                GitHub Repository Link *
+                                GitHub Repository URL *
                             </label>
                             <input
                                 type="text"
@@ -74,7 +74,7 @@ export default function NewDeploymentPage({ onStartDeploy, onBack }: NewDeployme
                                 value={formData.githubRepo}
                                 onChange={(e) => setFormData({ ...formData, githubRepo: e.target.value })}
                                 className="w-full rounded-xl border border-slate-200 bg-slate-50 p-4 text-slate-700 focus:border-green-500 focus:outline-none transition-all"
-                                placeholder="e.g., https://github.com/username/repo or username/repo"
+                                placeholder="e.g., https://github.com/username/repo"
                             />
                             <p className="mt-2 text-xs text-slate-500">
                                 This will trigger a GitHub Actions workflow to build and push your Docker image.

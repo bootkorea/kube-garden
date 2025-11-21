@@ -1,4 +1,4 @@
-import { Sprout, History, Settings, LogOut, LayoutDashboard, Rocket } from 'lucide-react';
+import { Sprout, History, Settings, LogOut, LayoutDashboard } from 'lucide-react';
 
 interface NavbarProps {
   currentPage: string;

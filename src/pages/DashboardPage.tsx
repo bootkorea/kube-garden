@@ -14,13 +14,7 @@ interface Service {
   githubOwner?: string;
 }
 
-interface RecentDeployment {
-  id: string;
-  serviceId: string;
-  imageTag: string;
-  status: string;
-  createdAt: number;
-}
+
 
 interface ServiceCardProps {
   service: Service;
@@ -92,8 +86,6 @@ interface DashboardPageProps {
 
 export default function DashboardPage({ onManage, onStartDeploy }: DashboardPageProps) {
   const [services, setServices] = useState<Service[]>([]);
-  const [recentDeployments, setRecentDeployments] = useState<RecentDeployment[]>([]);
-  const [loading, setLoading] = useState(true);
 
   const API_URL = import.meta.env.VITE_API_URL;
   const USE_MOCK = !API_URL || API_URL === 'mock';
@@ -110,7 +102,6 @@ export default function DashboardPage({ onManage, onStartDeploy }: DashboardPage
         { id: '2', name: 'demo-frontend', status: 'warning' as const, version: 'v2.1.0', pods: 2, lastDeploy: '1d ago', position: { x: 75, y: 50 } },
       ];
       setServices(mockServices);
-      setLoading(false);
       return;
     }
 
@@ -119,7 +110,8 @@ export default function DashboardPage({ onManage, onStartDeploy }: DashboardPage
       const servicesRes = await fetch(`${API_URL}/services`);
       if (servicesRes.ok) {
         const servicesData = await servicesRes.json();
-        const mappedServices = servicesData.map((svc: any, idx: number) => ({
+        const list = Array.isArray(servicesData) ? servicesData : (servicesData.services || []);
+        const mappedServices = list.map((svc: any, idx: number) => ({
           id: svc.id || String(idx),
           name: svc.name || svc.serviceName || 'unknown',
           status: 'healthy' as const,
@@ -133,16 +125,14 @@ export default function DashboardPage({ onManage, onStartDeploy }: DashboardPage
         setServices(mappedServices);
       }
 
-      // Fetch recent deployments
-      const deploymentsRes = await fetch(`${API_URL}/deployments`);
-      if (deploymentsRes.ok) {
-        const deploymentsData = await deploymentsRes.json();
-        setRecentDeployments(deploymentsData.slice(0, 5));
-      }
+      // Fetch recent deployments - Endpoint removed in v4
+      // const deploymentsRes = await fetch(`${API_URL}/deployments`);
+      // if (deploymentsRes.ok) {
+      //   const deploymentsData = await deploymentsRes.json();
+      //   setRecentDeployments(deploymentsData.slice(0, 5));
+      // }
     } catch (err) {
       console.error('Failed to fetch dashboard data:', err);
-    } finally {
-      setLoading(false);
     }
   };
 
@@ -208,8 +198,8 @@ export default function DashboardPage({ onManage, onStartDeploy }: DashboardPage
             >
               <div className="relative">
                 <div className={`rounded-full p-3 shadow-lg transition-all ${isHealthy
-                    ? 'bg-green-100 text-green-600 border-2 border-green-300'
-                    : 'bg-amber-100 text-amber-600 border-2 border-amber-300'
+                  ? 'bg-green-100 text-green-600 border-2 border-green-300'
+                  : 'bg-amber-100 text-amber-600 border-2 border-amber-300'
                   }`}>
                   <Sprout size={32} strokeWidth={2} />
                 </div>

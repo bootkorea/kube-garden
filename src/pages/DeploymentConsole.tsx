@@ -116,13 +116,14 @@ interface DeploymentConsoleProps {
 export default function DeploymentConsole({ onBack, deploymentConfig }: DeploymentConsoleProps) {
   const [status, setStatus] = useState<'idle' | 'planning' | 'running' | 'success' | 'failed'>('idle');
   const [logs, setLogs] = useState<string[]>(["AI Agent: Ready to deploy. Click 'Deploy with Agent' to start."]);
-  const [deploymentId, setDeploymentId] = useState<string | null>(null);
+  const [, setDeploymentId] = useState<string | null>(null);
   const logsEndRef = useRef<HTMLDivElement>(null);
 
   const API_URL = import.meta.env.VITE_API_URL;
 
+  // Auto scroll logs
   useEffect(() => {
-    logsEndRef.current?.scrollIntoView({ behavior: "smooth" });
+    logsEndRef.current?.scrollIntoView({ behavior: 'smooth' });
   }, [logs]);
 
   const handleDeploy = async () => {
@@ -136,24 +137,70 @@ export default function DeploymentConsole({ onBack, deploymentConfig }: Deployme
     setLogs(prev => [...prev, `User: Deploying ${deploymentConfig.serviceName}:${version} with ${deploymentConfig.strategy} strategy.`, "AI Agent: Analyzing... Generating deployment plan."]);
 
     try {
-      // Call the backend API to start deployment
-      const response = await fetch(`${API_URL}/deployments`, {
+      // Step 1: Check if service exists, if not create it
+      setLogs(prev => [...prev, "AI Agent: Checking if service exists..."]);
+
+      const servicesResponse = await fetch(`${API_URL}/services`);
+      if (!servicesResponse.ok) {
+        const errorText = await servicesResponse.text();
+        throw new Error(`Failed to fetch services: ${servicesResponse.status} - ${errorText}`);
+      }
+
+      const servicesData = await servicesResponse.json();
+      const servicesList = Array.isArray(servicesData) ? servicesData : (servicesData.services || []);
+
+      let service = servicesList.find((s: any) => s.name === deploymentConfig.serviceName);
+
+      if (!service) {
+        // Create the service
+        setLogs(prev => [...prev, "AI Agent: Service not found. Creating new service..."]);
+
+        const createResponse = await fetch(`${API_URL}/services`, {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+          },
+          body: JSON.stringify({
+            name: deploymentConfig.serviceName,
+            gitUrl: deploymentConfig.githubRepo,
+            gitBranch: 'main',
+            namespace: 'default',
+            criticality: 'medium',
+          }),
+        });
+
+        if (!createResponse.ok) {
+          const errorText = await createResponse.text();
+          setLogs(prev => [...prev, `Error: Failed to create service - ${createResponse.status}: ${errorText}`]);
+          throw new Error(`Failed to create service: ${createResponse.status} - ${errorText}`);
+        }
+
+        const createData = await createResponse.json();
+        service = createData.service;
+        setLogs(prev => [...prev, `AI Agent: Service created successfully with ID: ${service.id}`]);
+      } else {
+        setLogs(prev => [...prev, `AI Agent: Service found with ID: ${service.id}`]);
+      }
+
+      // Step 2: Start deployment with serviceId
+      setLogs(prev => [...prev, "AI Agent: Starting deployment..."]);
+
+      const response = await fetch(`${API_URL}/deploy`, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
         },
         body: JSON.stringify({
-          serviceName: deploymentConfig.serviceName,
-          githubRepo: deploymentConfig.githubRepo,
-          imageTag: version,
+          serviceId: service.id,
           environment: deploymentConfig.environment || 'production',
-          strategy: deploymentConfig.strategy,
           description: deploymentConfig.description,
         }),
       });
 
       if (!response.ok) {
-        throw new Error('Failed to start deployment');
+        const errorText = await response.text();
+        setLogs(prev => [...prev, `Error: Failed to start deployment - ${response.status}: ${errorText}`]);
+        throw new Error(`Failed to start deployment: ${response.status} - ${errorText}`);
       }
 
       const data = await response.json();
@@ -170,13 +217,14 @@ export default function DeploymentConsole({ onBack, deploymentConfig }: Deployme
       setStatus('failed');
       setLogs(prev => [...prev, `Error: ${error.message}`]);
       toast.error('Deployment failed to start', { id: 'deploy-toast' });
+      console.error('Deployment error:', error);
     }
   };
 
   const pollDeploymentStatus = async (id: string) => {
     const checkStatus = async () => {
       try {
-        const response = await fetch(`${API_URL}/deployments/${id}`);
+        const response = await fetch(`${API_URL}/deploy/${id}`);
         // If the request fails (e.g., 404 Not Found), keep polling until the record appears.
         if (!response.ok) {
           // Only stop on server errors (5xx). For 404, wait and retry.
@@ -189,7 +237,8 @@ export default function DeploymentConsole({ onBack, deploymentConfig }: Deployme
           return checkStatus();
         }
 
-        const deployment = await response.json();
+        const data = await response.json();
+        const deployment = data.deployment || data; // Handle both {deployment: {...}} and direct object
 
         // Update logs based on status
         if (deployment.status === 'BUILD_TRIGGERED') {
@@ -261,7 +310,6 @@ export default function DeploymentConsole({ onBack, deploymentConfig }: Deployme
 
   const isProcessing = status === 'planning' || status === 'running';
   const isSuccess = status === 'success';
-  const isFailed = status === 'failed';
 
   return (
     <div className="flex h-full w-full overflow-hidden bg-stone-50">
