@@ -62,9 +62,10 @@ jobs:
         env:
           DEPLOYMENT_ID: ${{ inputs.deployment_id }}
           IMAGE_TAG: ${{ github.sha }}
+          DEPLOYMENTS_TABLE_NAME: ${{ secrets.DEPLOYMENTS_TABLE_NAME }}
         run: |
           aws dynamodb update-item \
-            --table-name ${{ secrets.DEPLOYMENTS_TABLE_NAME }} \
+            --table-name "$DEPLOYMENTS_TABLE_NAME" \
             --key "{\"id\": {\"S\": \"$DEPLOYMENT_ID\"}}" \
             --update-expression "SET buildStatus = :status, imageTag = :tag, updatedAt = :time" \
             --expression-attribute-values "{\":status\": {\"S\": \"success\"}, \":tag\": {\"S\": \"$IMAGE_TAG\"}, \":time\": {\"N\": \"$(date +%s)000\"}}"
