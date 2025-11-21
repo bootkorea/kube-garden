@@ -204,14 +204,15 @@ export default function DeploymentConsole({ onBack, deploymentConfig }: Deployme
       }
 
       const data = await response.json();
-      setDeploymentId(data.deploymentId || data.id);
+      const deploymentId = data.deployment?.id || data.deploymentId || data.id;
+      setDeploymentId(deploymentId);
 
       setLogs(prev => [...prev, "AI Agent: Plan approved. Starting pipeline...", "Running Tests & Lint..."]);
       toast.success('Plan Created! Running Tests.', { id: 'deploy-toast' });
       setStatus('running');
 
       // Poll for deployment status
-      pollDeploymentStatus(data.deploymentId || data.id);
+      pollDeploymentStatus(deploymentId);
 
     } catch (error: any) {
       setStatus('failed');
