@@ -1,4 +1,5 @@
 import { Sprout, History, Settings, LogOut, LayoutDashboard } from 'lucide-react';
+import { useLanguage } from './LanguageContext';
 
 interface NavbarProps {
   currentPage: string;
@@ -7,10 +8,27 @@ interface NavbarProps {
 }
 
 export default function Navbar({ currentPage, onNavigate, onLogout }: NavbarProps) {
+  const { language } = useLanguage();
+  const copy = {
+    en: {
+      dashboard: 'Dashboard',
+      history: 'History',
+      settings: 'Settings',
+      logout: 'Logout',
+    },
+    ja: {
+      dashboard: 'ダッシュボード',
+      history: '履歴',
+      settings: '設定',
+      logout: 'ログアウト',
+    },
+  } as const;
+  const t = copy[language];
+
   const navItems = [
-    { id: 'dashboard', label: 'Dashboard', icon: LayoutDashboard },
-    { id: 'history', label: 'History', icon: History },
-    { id: 'settings', label: 'Settings', icon: Settings },
+    { id: 'dashboard', label: t.dashboard, icon: LayoutDashboard },
+    { id: 'history', label: t.history, icon: History },
+    { id: 'settings', label: t.settings, icon: Settings },
   ];
 
   return (
@@ -50,7 +68,7 @@ export default function Navbar({ currentPage, onNavigate, onLogout }: NavbarProp
         className="flex items-center gap-2 text-sm font-medium text-slate-400 hover:text-red-500 transition-colors"
       >
         <LogOut size={18} />
-        <span className="hidden sm:inline">Logout</span>
+        <span className="hidden sm:inline">{t.logout}</span>
       </button>
     </nav>
   );

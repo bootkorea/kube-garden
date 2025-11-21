@@ -3,6 +3,7 @@ import { Play, CheckCircle, Loader2, ShieldCheck, Terminal, Activity, ArrowLeft,
 import { LineChart, Line, XAxis, YAxis, Tooltip, ResponsiveContainer } from 'recharts';
 import confetti from 'canvas-confetti'; // celebratory confetti
 import toast, { Toaster } from 'react-hot-toast'; // toast notifications
+import { useLanguage } from '../components/LanguageContext';
 
 // --- Helpers ---
 const sleep = (ms: number) => new Promise((resolve) => setTimeout(resolve, ms));
@@ -25,7 +26,7 @@ const parseLogEntry = (entry: string): LogMeta => {
 // --- Visual components ---
 
 // Plant growth animation
-const GrowingPlant = ({ status }: { status: string }) => {
+const GrowingPlant = ({ status, labels }: { status: string; labels: { idle: string; planning: string; running: string; success: string } }) => {
   let Icon = Sprout;
   let color = "text-slate-300 bg-slate-100";
   let scale = "scale-100";
@@ -50,10 +51,10 @@ const GrowingPlant = ({ status }: { status: string }) => {
         <Icon size={48} strokeWidth={1.5} />
       </div>
       <p className="mt-4 text-sm font-bold text-slate-500 transition-all">
-        {status === 'idle' && "Ready to Grow"}
-        {status === 'planning' && "Sprouting..."}
-        {status === 'running' && "Blooming..."}
-        {status === 'success' && "Fully Grown!"}
+        {status === 'idle' && labels.idle}
+        {status === 'planning' && labels.planning}
+        {status === 'running' && labels.running}
+        {status === 'success' && labels.success}
       </p>
     </div>
   );
@@ -78,7 +79,7 @@ const TimelineStep = ({ icon: Icon, label, status }: { icon: any, label: string,
   );
 };
 
-const MetricsChart = () => {
+const MetricsChart = ({ title }: { title: string }) => {
   const data = Array.from({ length: 20 }, (_, i) => ({
     time: i,
     before: 100 + Math.random() * 20,
@@ -87,7 +88,7 @@ const MetricsChart = () => {
 
   return (
     <div className="h-64 w-full rounded-xl bg-white p-4 shadow-sm border border-slate-100">
-      <h4 className="mb-2 text-xs font-bold uppercase tracking-wider text-slate-400">Latency Comparison (ms)</h4>
+      <h4 className="mb-2 text-xs font-bold uppercase tracking-wider text-slate-400">{title}</h4>
       <ResponsiveContainer width="100%" height="100%">
         <LineChart data={data}>
           <XAxis dataKey="time" hide />
@@ -114,8 +115,118 @@ interface DeploymentConsoleProps {
 }
 
 export default function DeploymentConsole({ onBack, deploymentConfig }: DeploymentConsoleProps) {
+  const { language } = useLanguage();
+  const copy = {
+    en: {
+      headerPrefix: 'Deploying:',
+      environment: 'Production Environment',
+      strategyLabel: 'Strategy',
+      strategyOptions: {
+        canary: 'Canary Deployment (Recommended)',
+        blue: 'Blue-Green Deployment',
+      },
+      plant: {
+        idle: 'Ready to Grow',
+        planning: 'Sprouting...',
+        running: 'Blooming...',
+        success: 'Fully Grown!',
+      },
+      timeline: {
+        lint: 'Test & Lint',
+        scan: 'Sec Scan',
+        canary: 'Canary 10%',
+      },
+      buttons: {
+        deploy: 'Deploy with Agent',
+        processing: 'Processing...',
+        ready: 'Deployment Ready',
+        failed: 'Deployment Failed',
+      },
+      successPanel: {
+        title: 'Deployment Successful',
+        description: 'Traffic is currently split 10% (New) / 90% (Old). Metrics indicate stability.',
+        promote: 'Promote to 100%',
+        rollback: 'Rollback',
+        chartTitle: 'Latency Comparison (ms)',
+      },
+      failedPanel: {
+        title: 'Deployment Failed',
+        description: 'The deployment process encountered an error. Please check the logs above for details.',
+        retry: 'Try Again',
+      },
+      toast: {
+        initializing: 'Initializing Deployment Agent...',
+        planCreated: 'Plan Created! Running Tests.',
+        securityClear: 'Security Clean. Rolling out Canary.',
+        canaryLive: 'Canary Deployment Live!',
+        failedStart: 'Deployment failed to start',
+        failed: 'Deployment Failed',
+        promoteSuccess: 'Successfully Promoted to 100%!',
+        rollbackStart: 'Rolling back to previous version...',
+        rollbackDone: 'Rollback Complete.',
+      },
+      logReady: "AI Agent: Ready to deploy. Click 'Deploy with Agent' to start.",
+      userLabel: 'You',
+      agentLabel: 'AI Agent',
+    },
+    ja: {
+      headerPrefix: 'デプロイ中:',
+      environment: '本番環境',
+      strategyLabel: '戦略',
+      strategyOptions: {
+        canary: 'カナリアデプロイ（推奨）',
+        blue: 'ブルーグリーンデプロイ',
+      },
+      plant: {
+        idle: '成長の準備完了',
+        planning: '芽が出ています...',
+        running: '開花中...',
+        success: '立派に成長しました！',
+      },
+      timeline: {
+        lint: 'テスト & Lint',
+        scan: 'セキュリティスキャン',
+        canary: 'カナリア 10%',
+      },
+      buttons: {
+        deploy: 'エージェントとデプロイ',
+        processing: '処理中...',
+        ready: 'デプロイ完了',
+        failed: 'デプロイ失敗',
+      },
+      successPanel: {
+        title: 'デプロイ成功',
+        description: '現在のトラフィックは 新10% / 旧90% です。メトリクスは安定しています。',
+        promote: '100% に切り替え',
+        rollback: 'ロールバック',
+        chartTitle: 'レイテンシ比較 (ms)',
+      },
+      failedPanel: {
+        title: 'デプロイ失敗',
+        description: 'デプロイ処理でエラーが発生しました。上部のログを確認してください。',
+        retry: '再試行',
+      },
+      toast: {
+        initializing: 'デプロイエージェントを初期化しています...',
+        planCreated: '計画を作成しました。テストを実行中。',
+        securityClear: 'セキュリティ検査クリア。カナリアを展開中。',
+        canaryLive: 'カナリアデプロイが稼働中！',
+        failedStart: 'デプロイ開始に失敗しました',
+        failed: 'デプロイ失敗',
+        promoteSuccess: '100% へ昇格しました！',
+        rollbackStart: '前のバージョンへロールバックしています...',
+        rollbackDone: 'ロールバック完了。',
+      },
+      logReady: "AI エージェント: デプロイ準備完了です。「エージェントとデプロイ」をクリックしてください。",
+      userLabel: 'あなた',
+      agentLabel: 'AI エージェント',
+    },
+  } as const;
+  const t = copy[language];
+
+  const serviceName = deploymentConfig?.serviceName || 'demo-api';
   const [status, setStatus] = useState<'idle' | 'planning' | 'running' | 'success' | 'failed'>('idle');
-  const [logs, setLogs] = useState<string[]>(["AI Agent: Ready to deploy. Click 'Deploy with Agent' to start."]);
+  const [logs, setLogs] = useState<string[]>([t.logReady]);
   const [, setDeploymentId] = useState<string | null>(null);
   const logsEndRef = useRef<HTMLDivElement>(null);
 
@@ -130,7 +241,7 @@ export default function DeploymentConsole({ onBack, deploymentConfig }: Deployme
     if (status !== 'idle' || !deploymentConfig) return;
 
     // Toast: deployment initialized
-    toast.loading('Initializing Deployment Agent...', { id: 'deploy-toast' });
+    toast.loading(t.toast.initializing, { id: 'deploy-toast' });
 
     setStatus('planning');
     const version = 'latest'; // Default to latest since version control is removed
@@ -208,7 +319,7 @@ export default function DeploymentConsole({ onBack, deploymentConfig }: Deployme
       setDeploymentId(deploymentId);
 
       setLogs(prev => [...prev, "AI Agent: Plan approved. Starting pipeline...", "Running Tests & Lint..."]);
-      toast.success('Plan Created! Running Tests.', { id: 'deploy-toast' });
+      toast.success(t.toast.planCreated, { id: 'deploy-toast' });
       setStatus('running');
 
       // Poll for deployment status
@@ -217,7 +328,7 @@ export default function DeploymentConsole({ onBack, deploymentConfig }: Deployme
     } catch (error: any) {
       setStatus('failed');
       setLogs(prev => [...prev, `Error: ${error.message}`]);
-      toast.error('Deployment failed to start', { id: 'deploy-toast' });
+      toast.error(t.toast.failedStart, { id: 'deploy-toast' });
       console.error('Deployment error:', error);
     }
   };
@@ -252,7 +363,7 @@ export default function DeploymentConsole({ onBack, deploymentConfig }: Deployme
             lastStatusRef.current = currentStatus;
             setStatus('failed');
             setLogs(prev => [...prev, `Deployment failed: ${deployment.error}`]);
-            toast.error('Deployment Failed', { id: 'deploy-toast' });
+            toast.error(t.toast.failed, { id: 'deploy-toast' });
             return;
           }
         }
@@ -270,13 +381,13 @@ export default function DeploymentConsole({ onBack, deploymentConfig }: Deployme
             setLogs(prev => [...prev, "Build triggered via GitHub Actions..."]);
           } else if (effectiveStatus === 'BUILD_COMPLETED') {
             setLogs(prev => [...prev, "Build completed successfully!", "Security Scan passed (Trivy).", "Rolling out canary deployment..."]);
-            toast.success('Security Clean. Rolling out Canary.', { id: 'deploy-toast' });
+            toast.success(t.toast.securityClear, { id: 'deploy-toast' });
 
             // Simulate deployment completion after 3 seconds
             await sleep(3000);
             setStatus('success');
             setLogs(prev => [...prev, "AI Agent: Deployment successful! Canary is live."]);
-            toast.success('Canary Deployment Live!', { id: 'deploy-toast' });
+            toast.success(t.toast.canaryLive, { id: 'deploy-toast' });
 
             await sleep(1000);
             // Fire confetti
@@ -290,7 +401,7 @@ export default function DeploymentConsole({ onBack, deploymentConfig }: Deployme
           } else if (effectiveStatus === 'DEPLOYED_TO_EKS' || effectiveStatus === 'SUCCESS' || effectiveStatus === 'IMAGE_VALIDATED') {
             setStatus('success');
             setLogs(prev => [...prev, "AI Agent: Deployment successful! Canary is live."]);
-            toast.success('Canary Deployment Live!', { id: 'deploy-toast' });
+            toast.success(t.toast.canaryLive, { id: 'deploy-toast' });
 
             await sleep(1000);
             // Fire confetti
@@ -304,7 +415,7 @@ export default function DeploymentConsole({ onBack, deploymentConfig }: Deployme
           } else if (effectiveStatus && effectiveStatus.includes('FAILED')) {
             setStatus('failed');
             setLogs(prev => [...prev, `Deployment failed: ${deployment.error || 'Unknown error'}`]);
-            toast.error('Deployment Failed', { id: 'deploy-toast' });
+            toast.error(t.toast.failed, { id: 'deploy-toast' });
             return; // Stop polling
           }
         }
@@ -332,22 +443,22 @@ export default function DeploymentConsole({ onBack, deploymentConfig }: Deployme
       origin: { y: 0.6 },
       colors: ['#26ccff', '#a25afd', '#ff5e7e', '#88ff5a', '#fcff42', '#ffa62d', '#ff36ff']
     });
-    toast.success('Successfully Promoted to 100%!', { duration: 4000, icon: '🎉' });
+    toast.success(t.toast.promoteSuccess, { duration: 4000, icon: '🎉' });
 
     await sleep(2000);
     setStatus('idle');
-    setLogs(["AI Agent: Ready for next deployment."]);
+    setLogs([t.logReady]);
   };
 
   const handleRollback = async () => {
     setLogs(prev => [...prev, "User: Rollback requested.", "AI Agent: Reverting traffic to stable version... Done."]);
-    toast.error('Rolling back to previous version...');
+    toast.error(t.toast.rollbackStart);
 
     await sleep(1500);
-    toast.success('Rollback Complete.');
+    toast.success(t.toast.rollbackDone);
 
     setStatus('idle');
-    setLogs(["AI Agent: Ready for next deployment."]);
+    setLogs([t.logReady]);
   };
 
   const isProcessing = status === 'planning' || status === 'running';
@@ -369,21 +480,21 @@ export default function DeploymentConsole({ onBack, deploymentConfig }: Deployme
             <ArrowLeft size={20} />
           </button>
           <div>
-            <h2 className="text-xl font-bold text-slate-800">Deploying: demo-api</h2>
-            <p className="text-xs text-slate-400">Production Environment</p>
+            <h2 className="text-xl font-bold text-slate-800">{`${t.headerPrefix} ${serviceName}`}</h2>
+            <p className="text-xs text-slate-400">{t.environment}</p>
           </div>
         </header>
 
         <div className="flex-1 overflow-y-auto p-8">
           <div className="space-y-6">
             {/* Animated plant visualization */}
-            <GrowingPlant status={status} />
+            <GrowingPlant status={status} labels={t.plant} />
 
             <div>
-              <label className="mb-2 block text-sm font-bold text-slate-700">Strategy</label>
+              <label className="mb-2 block text-sm font-bold text-slate-700">{t.strategyLabel}</label>
               <select className="w-full rounded-xl border border-slate-200 bg-slate-50 p-4 text-slate-700 focus:border-green-500 focus:outline-none transition-all">
-                <option>Canary Deployment (Recommended)</option>
-                <option>Blue-Green Deployment</option>
+                <option>{t.strategyOptions.canary}</option>
+                <option>{t.strategyOptions.blue}</option>
               </select>
             </div>
 
@@ -397,21 +508,21 @@ export default function DeploymentConsole({ onBack, deploymentConfig }: Deployme
                       ${isFailed ? 'bg-red-600 shadow-none cursor-not-allowed' : ''}
                     `}
             >
-              {status === 'idle' && <><Play size={20} /> Deploy with Agent</>}
-              {isProcessing && <><Loader2 className="animate-spin" /> Processing...</>}
-              {isSuccess && <><Check size={20} /> Deployment Ready</>}
-              {isFailed && <><AlertCircle size={20} /> Deployment Failed</>}
+              {status === 'idle' && <><Play size={20} /> {t.buttons.deploy}</>}
+              {isProcessing && <><Loader2 className="animate-spin" /> {t.buttons.processing}</>}
+              {isSuccess && <><Check size={20} /> {t.buttons.ready}</>}
+              {isFailed && <><AlertCircle size={20} /> {t.buttons.failed}</>}
             </button>
 
             {/* Timeline Status */}
             {status !== 'idle' && (
               <div className="mt-4 rounded-2xl bg-slate-50 p-6 border border-slate-100 animate-in fade-in slide-in-from-bottom-2">
                 <div className="flex justify-between gap-2">
-                  <TimelineStep icon={Terminal} label="Test & Lint" status={status === 'planning' ? 'running' : 'done'} />
+                  <TimelineStep icon={Terminal} label={t.timeline.lint} status={status === 'planning' ? 'running' : 'done'} />
                   <div className="mt-4 h-0.5 flex-1 bg-slate-200"></div>
-                  <TimelineStep icon={ShieldCheck} label="Sec Scan" status={status === 'running' ? 'running' : (status === 'success' ? 'done' : 'pending')} />
+                  <TimelineStep icon={ShieldCheck} label={t.timeline.scan} status={status === 'running' ? 'running' : (status === 'success' ? 'done' : 'pending')} />
                   <div className="mt-4 h-0.5 flex-1 bg-slate-200"></div>
-                  <TimelineStep icon={Activity} label="Canary 10%" status={status === 'success' ? 'done' : (status === 'running' ? 'pending' : 'pending')} />
+                  <TimelineStep icon={Activity} label={t.timeline.canary} status={status === 'success' ? 'done' : (status === 'running' ? 'pending' : 'pending')} />
                 </div>
               </div>
             )}
@@ -453,7 +564,7 @@ export default function DeploymentConsole({ onBack, deploymentConfig }: Deployme
                           className={`mb-2 inline-flex items-center gap-1 text-xs font-semibold ${isAgent ? 'text-emerald-600' : 'text-slate-300'}`}
                         >
                           {isAgent && <Sparkles size={12} />}
-                          {isAgent ? 'AI Agent' : 'You'}
+                          {isAgent ? t.agentLabel : t.userLabel}
                         </span>
                       )}
                       <p>{meta.text}</p>
@@ -469,27 +580,27 @@ export default function DeploymentConsole({ onBack, deploymentConfig }: Deployme
         {isSuccess && (
           <div className="border-t border-slate-200 bg-white p-6 shadow-[0_-4px_20px_rgba(0,0,0,0.05)] animate-in slide-in-from-bottom-full duration-500">
             <div className="mb-4 flex items-center gap-2 text-green-700 font-bold text-lg">
-              <CheckCircle size={24} /> Deployment Successful
+              <CheckCircle size={24} /> {t.successPanel.title}
             </div>
 
             <div className="flex gap-6">
               <div className="w-1/2">
-                <MetricsChart />
+                <MetricsChart title={t.successPanel.chartTitle} />
               </div>
               <div className="w-1/2 flex flex-col justify-center gap-3">
-                <p className="text-sm text-slate-500">Traffic is currently split <b>10% (New) / 90% (Old)</b>. Metrics indicate stability.</p>
+                <p className="text-sm text-slate-500">{t.successPanel.description}</p>
                 <div className="flex gap-3">
                   <button
                     onClick={handlePromote}
                     className="flex-1 rounded-xl bg-green-600 py-3 text-sm font-bold text-white hover:bg-green-700 shadow-md shadow-green-100 transition-colors"
                   >
-                    Promote to 100%
+                    {t.successPanel.promote}
                   </button>
                   <button
                     onClick={handleRollback}
                     className="flex-1 rounded-xl bg-white border-2 border-slate-200 py-3 text-sm font-bold text-slate-600 hover:bg-slate-50 hover:text-red-500 hover:border-red-200 transition-colors"
                   >
-                    Rollback
+                    {t.successPanel.rollback}
                   </button>
                 </div>
               </div>
@@ -500,16 +611,16 @@ export default function DeploymentConsole({ onBack, deploymentConfig }: Deployme
         {isFailed && (
           <div className="border-t border-red-200 bg-red-50 p-6 shadow-[0_-4px_20px_rgba(0,0,0,0.05)] animate-in slide-in-from-bottom-full duration-500">
             <div className="mb-4 flex items-center gap-2 text-red-700 font-bold text-lg">
-              <AlertCircle size={24} /> Deployment Failed
+              <AlertCircle size={24} /> {t.failedPanel.title}
             </div>
             <p className="text-sm text-red-600 mb-4">
-              The deployment process encountered an error. Please check the logs above for details.
+              {t.failedPanel.description}
             </p>
             <button
               onClick={() => setStatus('idle')}
               className="w-full rounded-xl bg-red-600 py-3 text-sm font-bold text-white hover:bg-red-700 shadow-md shadow-red-100 transition-colors"
             >
-              Try Again
+              {t.failedPanel.retry}
             </button>
           </div>
         )}

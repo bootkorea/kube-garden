@@ -1,5 +1,6 @@
 import { useState, useEffect } from 'react';
 import { CheckCircle, XCircle, GitCommit, Loader2, Trash2 } from 'lucide-react';
+import { useLanguage } from '../components/LanguageContext';
 
 interface DeploymentRecord {
   id: string;
@@ -17,6 +18,58 @@ export default function HistoryPage() {
   const [deployments, setDeployments] = useState<DeploymentRecord[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
+  const { language } = useLanguage();
+  const copy = {
+    en: {
+      title: 'Deployment Journal 📜',
+      subtitle: 'Track all gardening activities and growth records.',
+      mock: '⚠️ Running in MOCK mode (Set VITE_API_URL to enable real backend)',
+      confirmDelete: 'Are you sure you want to delete this deployment?',
+      deleteErrorPrefix: 'Error deleting deployment:',
+      errorLabel: 'Error:',
+      empty: 'No deployments yet. Start your first deployment! 🌱',
+      table: {
+        status: 'Status',
+        service: 'Service / Version',
+        strategy: 'Strategy',
+        summary: 'Summary',
+        time: 'Time',
+        actions: 'Actions',
+        deleteTitle: 'Delete deployment',
+      },
+      statuses: {
+        success: 'Success',
+        failed: 'Failed',
+        progress: 'In Progress',
+      },
+      loadingAlt: 'Loading...',
+    },
+    ja: {
+      title: 'デプロイ日誌 📜',
+      subtitle: 'ガーデニングの活動と成長記録を追跡します。',
+      mock: '⚠️ モックモードで動作中（本番利用には VITE_API_URL を設定）',
+      confirmDelete: 'このデプロイ履歴を削除しますか？',
+      deleteErrorPrefix: 'デプロイ削除エラー:',
+      errorLabel: 'エラー:',
+      empty: 'まだデプロイ記録がありません。まずは 1 件デプロイしてみましょう！🌱',
+      table: {
+        status: 'ステータス',
+        service: 'サービス / バージョン',
+        strategy: '戦略',
+        summary: 'サマリー',
+        time: '時間',
+        actions: '操作',
+        deleteTitle: 'デプロイを削除',
+      },
+      statuses: {
+        success: '成功',
+        failed: '失敗',
+        progress: '進行中',
+      },
+      loadingAlt: '読み込み中...',
+    },
+  } as const;
+  const t = copy[language];
 
   const API_URL = import.meta.env.VITE_API_URL;
   const USE_MOCK = !API_URL || API_URL === 'mock';
@@ -51,7 +104,7 @@ export default function HistoryPage() {
   };
 
   const handleDelete = async (deploymentId: string) => {
-    if (!confirm('Are you sure you want to delete this deployment?')) return;
+    if (!confirm(t.confirmDelete)) return;
 
     if (USE_MOCK) {
       setDeployments(deployments.filter(d => d.id !== deploymentId));
@@ -68,7 +121,7 @@ export default function HistoryPage() {
       // Remove from local state
       setDeployments(deployments.filter(d => d.id !== deploymentId));
     } catch (err: any) {
-      alert(`Error deleting deployment: ${err.message}`);
+      alert(`${t.deleteErrorPrefix} ${err.message}`);
     }
   };
 
@@ -78,11 +131,11 @@ export default function HistoryPage() {
     const isInProgress = record.status.includes('PROGRESS') || record.status.includes('TRIGGERED') || record.status.includes('IN_PROGRESS');
 
     if (isSuccess) {
-      return <span className="inline-flex items-center gap-1 rounded-full bg-green-100 px-2.5 py-0.5 text-xs font-bold text-green-700"><CheckCircle size={12} /> Success</span>;
+      return <span className="inline-flex items-center gap-1 rounded-full bg-green-100 px-2.5 py-0.5 text-xs font-bold text-green-700"><CheckCircle size={12} /> {t.statuses.success}</span>;
     } else if (isFailed) {
-      return <span className="inline-flex items-center gap-1 rounded-full bg-red-100 px-2.5 py-0.5 text-xs font-bold text-red-700"><XCircle size={12} /> Failed</span>;
+      return <span className="inline-flex items-center gap-1 rounded-full bg-red-100 px-2.5 py-0.5 text-xs font-bold text-red-700"><XCircle size={12} /> {t.statuses.failed}</span>;
     } else if (isInProgress) {
-      return <span className="inline-flex items-center gap-1 rounded-full bg-blue-100 px-2.5 py-0.5 text-xs font-bold text-blue-700"><Loader2 size={12} className="animate-spin" /> In Progress</span>;
+      return <span className="inline-flex items-center gap-1 rounded-full bg-blue-100 px-2.5 py-0.5 text-xs font-bold text-blue-700"><Loader2 size={12} className="animate-spin" /> {t.statuses.progress}</span>;
     }
     return <span className="inline-flex items-center gap-1 rounded-full bg-slate-100 px-2.5 py-0.5 text-xs font-bold text-slate-700">{record.status}</span>;
   };
@@ -93,16 +146,16 @@ export default function HistoryPage() {
     const hours = Math.floor(diff / 3600000);
     const days = Math.floor(diff / 86400000);
 
-    if (minutes < 1) return 'Just now';
-    if (minutes < 60) return `${minutes}m ago`;
-    if (hours < 24) return `${hours}h ago`;
-    return `${days}d ago`;
+    if (minutes < 1) return language === 'ja' ? 'たった今' : 'Just now';
+    if (minutes < 60) return language === 'ja' ? `${minutes}分前` : `${minutes}m ago`;
+    if (hours < 24) return language === 'ja' ? `${hours}時間前` : `${hours}h ago`;
+    return language === 'ja' ? `${days}日前` : `${days}d ago`;
   };
 
   if (loading) {
     return (
       <div className="h-full flex items-center justify-center bg-stone-50">
-        <Loader2 className="animate-spin text-green-600" size={48} />
+        <Loader2 className="animate-spin text-green-600" size={48} aria-label={t.loadingAlt} />
       </div>
     );
   }
@@ -110,14 +163,14 @@ export default function HistoryPage() {
   return (
     <div className="h-full overflow-y-auto bg-stone-50 p-8">
       <header className="mb-8">
-        <h2 className="text-2xl font-bold text-slate-800">Deployment Journal 📜</h2>
-        <p className="text-slate-500">Track all gardening activities and growth records.</p>
-        {USE_MOCK && <p className="text-xs text-amber-600 mt-2">⚠️ Running in MOCK mode (Set VITE_API_URL to enable real backend)</p>}
+        <h2 className="text-2xl font-bold text-slate-800">{t.title}</h2>
+        <p className="text-slate-500">{t.subtitle}</p>
+        {USE_MOCK && <p className="text-xs text-amber-600 mt-2">{t.mock}</p>}
       </header>
 
       {error && (
         <div className="mb-4 rounded-xl bg-red-50 border border-red-200 p-4 text-red-700">
-          Error: {error}
+          {t.errorLabel} {error}
         </div>
       )}
 
@@ -125,19 +178,19 @@ export default function HistoryPage() {
         <table className="w-full text-left text-sm text-slate-600">
           <thead className="bg-slate-50 text-xs uppercase text-slate-400">
             <tr>
-              <th className="px-6 py-4 font-bold">Status</th>
-              <th className="px-6 py-4 font-bold">Service / Version</th>
-              <th className="px-6 py-4 font-bold">Strategy</th>
-              <th className="px-6 py-4 font-bold">Summary</th>
-              <th className="px-6 py-4 font-bold">Time</th>
-              <th className="px-6 py-4 font-bold">Actions</th>
+              <th className="px-6 py-4 font-bold">{t.table.status}</th>
+              <th className="px-6 py-4 font-bold">{t.table.service}</th>
+              <th className="px-6 py-4 font-bold">{t.table.strategy}</th>
+              <th className="px-6 py-4 font-bold">{t.table.summary}</th>
+              <th className="px-6 py-4 font-bold">{t.table.time}</th>
+              <th className="px-6 py-4 font-bold">{t.table.actions}</th>
             </tr>
           </thead>
           <tbody className="divide-y divide-slate-100">
             {deployments.length === 0 ? (
               <tr>
                 <td colSpan={6} className="px-6 py-8 text-center text-slate-400">
-                  No deployments yet. Start your first deployment! 🌱
+                  {t.empty}
                 </td>
               </tr>
             ) : (
@@ -165,7 +218,7 @@ export default function HistoryPage() {
                     <button
                       onClick={() => handleDelete(record.id)}
                       className="rounded-lg p-2 text-red-500 hover:bg-red-50 transition-colors"
-                      title="Delete deployment"
+                      title={t.table.deleteTitle}
                     >
                       <Trash2 size={16} />
                     </button>

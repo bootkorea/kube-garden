@@ -1,5 +1,6 @@
 import { useState, useEffect } from 'react';
 import { Leaf, AlertCircle, ArrowRight, Sprout, Trash2 } from 'lucide-react';
+import { useLanguage } from '../components/LanguageContext';
 
 // --- Type definitions & mock data ---
 interface Service {
@@ -20,9 +21,17 @@ interface ServiceCardProps {
   service: Service;
   onManage: () => void;
   onDelete: (id: string) => void;
+  copy: {
+    version: string;
+    lastWatered: string;
+    manage: string;
+    deleteTitle: string;
+    healthy: string;
+    warning: string;
+  };
 }
 
-const ServiceCard = ({ service, onManage, onDelete }: ServiceCardProps) => {
+const ServiceCard = ({ service, onManage, onDelete, copy }: ServiceCardProps) => {
   const isHealthy = service.status === 'healthy';
   // ServiceCard UI
   return (
@@ -43,7 +52,7 @@ const ServiceCard = ({ service, onManage, onDelete }: ServiceCardProps) => {
               <h3 className="text-lg font-bold text-slate-800">{service.name}</h3>
               <span className={`text-xs font-medium px-2 py-0.5 rounded-full 
                 ${isHealthy ? 'bg-green-100 text-green-700' : 'bg-amber-100 text-amber-700'}`}>
-                {service.status.toUpperCase()}
+                {isHealthy ? copy.healthy : copy.warning}
               </span>
             </div>
           </div>
@@ -53,7 +62,7 @@ const ServiceCard = ({ service, onManage, onDelete }: ServiceCardProps) => {
               onDelete(service.id);
             }}
             className="rounded-lg p-2 text-red-400 hover:bg-red-50 hover:text-red-600 transition-colors"
-            title="Delete service"
+            title={copy.deleteTitle}
           >
             <Trash2 size={16} />
           </button>
@@ -61,11 +70,11 @@ const ServiceCard = ({ service, onManage, onDelete }: ServiceCardProps) => {
       </div>
       <div className="mt-6 grid grid-cols-2 gap-4 text-sm text-slate-600">
         <div>
-          <p className="text-xs text-slate-400">Version</p>
+          <p className="text-xs text-slate-400">{copy.version}</p>
           <p className="font-mono font-semibold">{service.version}</p>
         </div>
         <div>
-          <p className="text-xs text-slate-400">Last Watered</p>
+          <p className="text-xs text-slate-400">{copy.lastWatered}</p>
           <p className="font-medium">{service.lastDeploy}</p>
         </div>
       </div>
@@ -73,7 +82,7 @@ const ServiceCard = ({ service, onManage, onDelete }: ServiceCardProps) => {
         onClick={onManage}
         className="mt-6 flex w-full items-center justify-center gap-2 rounded-xl bg-slate-900 py-3 text-sm font-bold text-white transition-all hover:bg-green-600 hover:shadow-lg hover:shadow-green-200"
       >
-        Manage Garden <ArrowRight size={16} />
+        {copy.manage} <ArrowRight size={16} />
       </button>
     </div>
   );
@@ -86,6 +95,44 @@ interface DashboardPageProps {
 
 export default function DashboardPage({ onManage, onStartDeploy }: DashboardPageProps) {
   const [services, setServices] = useState<Service[]>([]);
+  const { language } = useLanguage();
+  const copy = {
+    en: {
+      title: 'My Digital Garden 🌿',
+      subtitle: 'Manage your Kubernetes deployments with peace of mind.',
+      mock: '⚠️ Running in MOCK mode',
+      startButton: '🌱 Start Deployment',
+      gardenAlt: 'Digital Garden',
+      confirmDelete: 'Are you sure you want to delete this service?',
+      deleteErrorPrefix: 'Error deleting service:',
+      serviceCard: {
+        version: 'Version',
+        lastWatered: 'Last Watered',
+        manage: 'Manage Garden',
+        deleteTitle: 'Delete service',
+        healthy: 'HEALTHY',
+        warning: 'WARNING',
+      },
+    },
+    ja: {
+      title: '私のデジタルガーデン 🌿',
+      subtitle: 'Kubernetes デプロイを安心して管理しましょう。',
+      mock: '⚠️ モックモードで動作中',
+      startButton: '🌱 デプロイを開始',
+      gardenAlt: 'デジタルガーデン',
+      confirmDelete: 'このサービスを削除しますか？',
+      deleteErrorPrefix: 'サービス削除エラー:',
+      serviceCard: {
+        version: 'バージョン',
+        lastWatered: '最終散水',
+        manage: '庭を管理',
+        deleteTitle: 'サービスを削除',
+        healthy: '正常',
+        warning: '注意',
+      },
+    },
+  } as const;
+  const t = copy[language];
 
   const API_URL = import.meta.env.VITE_API_URL;
   const USE_MOCK = !API_URL || API_URL === 'mock';
@@ -137,7 +184,7 @@ export default function DashboardPage({ onManage, onStartDeploy }: DashboardPage
   };
 
   const handleDeleteService = async (serviceId: string) => {
-    if (!confirm('Are you sure you want to delete this service?')) return;
+    if (!confirm(t.confirmDelete)) return;
 
     if (USE_MOCK) {
       setServices(services.filter(s => s.id !== serviceId));
@@ -154,7 +201,7 @@ export default function DashboardPage({ onManage, onStartDeploy }: DashboardPage
       // Remove from local state
       setServices(services.filter(s => s.id !== serviceId));
     } catch (err: any) {
-      alert(`Error deleting service: ${err.message}`);
+      alert(`${t.deleteErrorPrefix} ${err.message}`);
     }
   };
 
@@ -163,15 +210,15 @@ export default function DashboardPage({ onManage, onStartDeploy }: DashboardPage
     <div className="min-h-full bg-stone-50 p-8">
       <header className="mb-8 flex flex-col gap-4 md:flex-row md:items-center md:justify-between">
         <div>
-          <h1 className="text-3xl font-bold text-slate-800">My Digital Garden 🌿</h1>
-          <p className="text-slate-500">Manage your Kubernetes deployments with peace of mind.</p>
-          {USE_MOCK && <p className="text-xs text-amber-600 mt-2">⚠️ Running in MOCK mode</p>}
+          <h1 className="text-3xl font-bold text-slate-800">{t.title}</h1>
+          <p className="text-slate-500">{t.subtitle}</p>
+          {USE_MOCK && <p className="text-xs text-amber-600 mt-2">{t.mock}</p>}
         </div>
         <button
           onClick={onStartDeploy}
           className="inline-flex items-center justify-center gap-2 rounded-2xl bg-slate-900 px-6 py-3 text-sm font-bold text-white shadow-lg shadow-slate-300 transition-all hover:bg-green-600 hover:shadow-green-200"
         >
-          🌱 Start Deployment
+          {t.startButton}
         </button>
       </header>
 
@@ -179,7 +226,7 @@ export default function DashboardPage({ onManage, onStartDeploy }: DashboardPage
       <div className="mb-10 relative w-full max-w-2xl rounded-3xl overflow-hidden shadow-xl" style={{ aspectRatio: '16/8' }}>
         <img
           src="/garden.png"
-          alt="Digital Garden"
+          alt={t.gardenAlt}
           className="w-full h-full object-cover"
         />
         {/* Sprouts positioned on the garden */}
@@ -209,7 +256,7 @@ export default function DashboardPage({ onManage, onStartDeploy }: DashboardPage
                     {service.name}
                     <div className={`text-[10px] mt-1 ${isHealthy ? 'text-green-300' : 'text-amber-300'
                       }`}>
-                      {service.status.toUpperCase()}
+                      {isHealthy ? t.serviceCard.healthy : t.serviceCard.warning}
                     </div>
                     <div className="absolute bottom-0 left-1/2 transform -translate-x-1/2 translate-y-full w-0 h-0 border-l-4 border-r-4 border-t-4 border-transparent border-t-slate-900"></div>
                   </div>
@@ -228,6 +275,7 @@ export default function DashboardPage({ onManage, onStartDeploy }: DashboardPage
             service={svc}
             onManage={onManage}
             onDelete={handleDeleteService}
+            copy={t.serviceCard}
           />
         ))}
       </div>
