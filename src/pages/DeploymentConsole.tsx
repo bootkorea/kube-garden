@@ -1,5 +1,5 @@
 import { useState, useRef, useEffect } from 'react';
-import { Play, CheckCircle, Loader2, ShieldCheck, Terminal, Activity, ArrowLeft, Check, Sprout, Trees, Flower2, Bot, Sparkles } from 'lucide-react';
+import { Play, CheckCircle, Loader2, ShieldCheck, Terminal, Activity, ArrowLeft, Check, Sprout, Trees, Flower2, Bot, Sparkles, AlertCircle } from 'lucide-react';
 import { LineChart, Line, XAxis, YAxis, Tooltip, ResponsiveContainer } from 'recharts';
 import confetti from 'canvas-confetti'; // celebratory confetti
 import toast, { Toaster } from 'react-hot-toast'; // toast notifications
@@ -221,6 +221,8 @@ export default function DeploymentConsole({ onBack, deploymentConfig }: Deployme
     }
   };
 
+  const lastStatusRef = useRef<string | null>(null);
+
   const pollDeploymentStatus = async (id: string) => {
     const checkStatus = async () => {
       try {
@@ -239,42 +241,37 @@ export default function DeploymentConsole({ onBack, deploymentConfig }: Deployme
 
         const data = await response.json();
         const deployment = data.deployment || data; // Handle both {deployment: {...}} and direct object
+        const currentStatus = deployment.status;
 
-        // Only update logs if status has changed or it's a new deployment
-        // We can use a ref or just check the last log message, but checking status transition is safer if we had state for it.
-        // For now, let's just check if we already logged this state to avoid spam.
+        // Only update logs if status has changed
+        if (currentStatus !== lastStatusRef.current) {
+          lastStatusRef.current = currentStatus;
 
-        const lastLog = logs[logs.length - 1];
-
-        if (deployment.status === 'BUILD_TRIGGERED') {
-          if (!lastLog?.includes("Build triggered")) {
+          if (currentStatus === 'BUILD_TRIGGERED') {
             setLogs(prev => [...prev, "Build triggered via GitHub Actions..."]);
-          }
-        } else if (deployment.status === 'BUILD_COMPLETED') {
-          if (!lastLog?.includes("Build completed")) {
+          } else if (currentStatus === 'BUILD_COMPLETED') {
             setLogs(prev => [...prev, "Build completed successfully!", "Security Scan passed (Trivy).", "Rolling out canary deployment..."]);
             toast.success('Security Clean. Rolling out Canary.', { id: 'deploy-toast' });
-          }
-        } else if (deployment.status === 'DEPLOYED_TO_EKS' || deployment.status === 'SUCCESS' || deployment.status === 'IMAGE_VALIDATED') {
-          // This is a terminal state for this polling loop, so we handle it once and return
-          setStatus('success');
-          setLogs(prev => [...prev, "AI Agent: Deployment successful! Canary is live."]);
-          toast.success('Canary Deployment Live!', { id: 'deploy-toast' });
+          } else if (currentStatus === 'DEPLOYED_TO_EKS' || currentStatus === 'SUCCESS' || currentStatus === 'IMAGE_VALIDATED') {
+            setStatus('success');
+            setLogs(prev => [...prev, "AI Agent: Deployment successful! Canary is live."]);
+            toast.success('Canary Deployment Live!', { id: 'deploy-toast' });
 
-          await sleep(1000);
-          // Fire confetti
-          confetti({
-            particleCount: 150,
-            spread: 70,
-            origin: { y: 0.6 },
-            colors: ['#26ccff', '#a25afd', '#ff5e7e', '#88ff5a', '#fcff42', '#ffa62d', '#ff36ff']
-          });
-          return; // Stop polling
-        } else if (deployment.status && deployment.status.includes('FAILED')) {
-          setStatus('failed');
-          setLogs(prev => [...prev, `Deployment failed: ${deployment.error || 'Unknown error'}`]);
-          toast.error('Deployment Failed', { id: 'deploy-toast' });
-          return; // Stop polling
+            await sleep(1000);
+            // Fire confetti
+            confetti({
+              particleCount: 150,
+              spread: 70,
+              origin: { y: 0.6 },
+              colors: ['#26ccff', '#a25afd', '#ff5e7e', '#88ff5a', '#fcff42', '#ffa62d', '#ff36ff']
+            });
+            return; // Stop polling
+          } else if (currentStatus && currentStatus.includes('FAILED')) {
+            setStatus('failed');
+            setLogs(prev => [...prev, `Deployment failed: ${deployment.error || 'Unknown error'}`]);
+            toast.error('Deployment Failed', { id: 'deploy-toast' });
+            return; // Stop polling
+          }
         }
 
         // Continue polling
@@ -320,6 +317,7 @@ export default function DeploymentConsole({ onBack, deploymentConfig }: Deployme
 
   const isProcessing = status === 'planning' || status === 'running';
   const isSuccess = status === 'success';
+  const isFailed = status === 'failed';
 
   return (
     <div className="flex h-full w-full overflow-hidden bg-stone-50">
@@ -459,6 +457,23 @@ export default function DeploymentConsole({ onBack, deploymentConfig }: Deployme
                 </div>
               </div>
             </div>
+          </div>
+        )}
+
+        {isFailed && (
+          <div className="border-t border-red-200 bg-red-50 p-6 shadow-[0_-4px_20px_rgba(0,0,0,0.05)] animate-in slide-in-from-bottom-full duration-500">
+            <div className="mb-4 flex items-center gap-2 text-red-700 font-bold text-lg">
+              <AlertCircle size={24} /> Deployment Failed
+            </div>
+            <p className="text-sm text-red-600 mb-4">
+              The deployment process encountered an error. Please check the logs above for details.
+            </p>
+            <button
+              onClick={() => setStatus('idle')}
+              className="w-full rounded-xl bg-red-600 py-3 text-sm font-bold text-white hover:bg-red-700 shadow-md shadow-red-100 transition-colors"
+            >
+              Try Again
+            </button>
           </div>
         )}
       </div>
