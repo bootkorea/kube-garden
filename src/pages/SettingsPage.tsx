@@ -1,32 +1,9 @@
-import React, { useEffect, useRef } from 'react';
+import React from 'react';
 import { Volume2, VolumeX, Bot } from 'lucide-react';
+import { useAudio } from '../components/AudioContext';
 
 export default function SettingsPage() {
-  const [bgm, setBgm] = React.useState(false);
-  const audioRef = useRef<HTMLAudioElement | null>(null);
-
-  useEffect(() => {
-    if (!audioRef.current) {
-      audioRef.current = new Audio('/mainbgm.mp3');
-      audioRef.current.loop = true;
-      audioRef.current.volume = 0.4;
-    }
-
-    if (bgm) {
-      audioRef.current
-        .play()
-        .catch(() => {
-          // Ignore autoplay block; input toggle will resolve on interaction
-        });
-    } else {
-      audioRef.current.pause();
-      audioRef.current.currentTime = 0;
-    }
-
-    return () => {
-      audioRef.current?.pause();
-    };
-  }, [bgm]);
+  const { bgm, setBgm } = useAudio();
 
   return (
     <div className="h-full overflow-y-auto bg-stone-50 p-8">
