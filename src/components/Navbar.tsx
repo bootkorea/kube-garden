@@ -9,7 +9,6 @@ interface NavbarProps {
 export default function Navbar({ currentPage, onNavigate, onLogout }: NavbarProps) {
   const navItems = [
     { id: 'dashboard', label: 'Dashboard', icon: LayoutDashboard },
-    { id: 'launch', label: 'Deploy', icon: Rocket },
     { id: 'history', label: 'History', icon: History },
     { id: 'settings', label: 'Settings', icon: Settings },
   ];
@@ -17,7 +16,7 @@ export default function Navbar({ currentPage, onNavigate, onLogout }: NavbarProp
   return (
     <nav className="flex h-16 items-center justify-between bg-white px-6 border-b border-slate-200 shrink-0">
       {/* Logo Area */}
-      <div 
+      <div
         className="flex items-center gap-2 cursor-pointer hover:opacity-80"
         onClick={() => onNavigate('dashboard')}
       >
@@ -34,8 +33,8 @@ export default function Navbar({ currentPage, onNavigate, onLogout }: NavbarProp
             key={item.id}
             onClick={() => onNavigate(item.id)}
             className={`flex items-center gap-2 px-4 py-2 rounded-lg text-sm font-bold transition-all ring-2 ring-transparent hover:ring-slate-400 focus:outline-none focus:ring-2 focus:ring-green-500 focus:ring-offset-2 focus:ring-offset-slate-100
-              ${currentPage === item.id 
-                ? 'bg-white text-green-700 shadow-sm' 
+              ${currentPage === item.id
+                ? 'bg-white text-green-700 shadow-sm'
                 : 'text-slate-500 hover:text-slate-800 hover:bg-slate-200/50'
               }`}
           >
@@ -46,7 +45,7 @@ export default function Navbar({ currentPage, onNavigate, onLogout }: NavbarProp
       </div>
 
       {/* Logout */}
-      <button 
+      <button
         onClick={onLogout}
         className="flex items-center gap-2 text-sm font-medium text-slate-400 hover:text-red-500 transition-colors"
       >

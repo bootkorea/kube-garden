@@ -82,7 +82,7 @@ const MetricsChart = () => {
   const data = Array.from({ length: 20 }, (_, i) => ({
     time: i,
     before: 100 + Math.random() * 20,
-    after: i > 10 ? 80 + Math.random() * 10 : null, 
+    after: i > 10 ? 80 + Math.random() * 10 : null,
   }));
 
   return (
@@ -104,52 +104,136 @@ const MetricsChart = () => {
 // --- Main component ---
 interface DeploymentConsoleProps {
   onBack: () => void;
+  deploymentConfig: {
+    serviceName: string;
+    githubRepo: string;
+    strategy: string;
+    description: string;
+    environment?: string; // Optional
+  } | null;
 }
 
-export default function DeploymentConsole({ onBack }: DeploymentConsoleProps) {
-  const [status, setStatus] = useState<'idle' | 'planning' | 'running' | 'success'>('idle');
-  const [logs, setLogs] = useState<string[]>(["AI Agent: Ready to deploy. Describe your changes."]);
+export default function DeploymentConsole({ onBack, deploymentConfig }: DeploymentConsoleProps) {
+  const [status, setStatus] = useState<'idle' | 'planning' | 'running' | 'success' | 'failed'>('idle');
+  const [logs, setLogs] = useState<string[]>(["AI Agent: Ready to deploy. Click 'Deploy with Agent' to start."]);
+  const [deploymentId, setDeploymentId] = useState<string | null>(null);
   const logsEndRef = useRef<HTMLDivElement>(null);
+
+  const API_URL = import.meta.env.VITE_API_URL;
 
   useEffect(() => {
     logsEndRef.current?.scrollIntoView({ behavior: "smooth" });
   }, [logs]);
 
   const handleDeploy = async () => {
-    if (status !== 'idle') return;
+    if (status !== 'idle' || !deploymentConfig) return;
 
     // Toast: deployment initialized
     toast.loading('Initializing Deployment Agent...', { id: 'deploy-toast' });
 
     setStatus('planning');
-    setLogs(prev => [...prev, "User: Deploying v1.1 with Canary strategy.", "AI Agent: Analyzing... Generating deployment plan."]);
-    
-    await sleep(1000); 
+    const version = 'latest'; // Default to latest since version control is removed
+    setLogs(prev => [...prev, `User: Deploying ${deploymentConfig.serviceName}:${version} with ${deploymentConfig.strategy} strategy.`, "AI Agent: Analyzing... Generating deployment plan."]);
 
-    // Toast: phase progression
-    toast.success('Plan Created! Running Tests.', { id: 'deploy-toast' });
-    setStatus('running');
-    setLogs(prev => [...prev, "AI Agent: Plan approved. Starting pipeline...", "Running Tests & Lint..."]);
-    
-    await sleep(1500); 
+    try {
+      // Call the backend API to start deployment
+      const response = await fetch(`${API_URL}/deployments`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          serviceName: deploymentConfig.serviceName,
+          githubRepo: deploymentConfig.githubRepo,
+          imageTag: version,
+          environment: deploymentConfig.environment || 'production',
+          strategy: deploymentConfig.strategy,
+          description: deploymentConfig.description,
+        }),
+      });
 
-    // Toast: security scan finished
-    toast.success('Security Clean. Rolling out Canary.', { id: 'deploy-toast' });
-    setLogs(prev => [...prev, "Security Scan passed (Trivy).", "Rolling out 10% traffic (Argo Rollouts)..."]);
-    
-    await sleep(1500); 
+      if (!response.ok) {
+        throw new Error('Failed to start deployment');
+      }
 
-    // Toast: deployment succeeded
-    toast.success('Canary Deployment Live!', { id: 'deploy-toast' });
-    setStatus('success');
-    setLogs(prev => [...prev, "AI Agent: Metrics collected. Latency improved by 15%. Promotion recommended."]);
+      const data = await response.json();
+      setDeploymentId(data.deploymentId || data.id);
+
+      setLogs(prev => [...prev, "AI Agent: Plan approved. Starting pipeline...", "Running Tests & Lint..."]);
+      toast.success('Plan Created! Running Tests.', { id: 'deploy-toast' });
+      setStatus('running');
+
+      // Poll for deployment status
+      pollDeploymentStatus(data.deploymentId || data.id);
+
+    } catch (error: any) {
+      setStatus('failed');
+      setLogs(prev => [...prev, `Error: ${error.message}`]);
+      toast.error('Deployment failed to start', { id: 'deploy-toast' });
+    }
+  };
+
+  const pollDeploymentStatus = async (id: string) => {
+    const checkStatus = async () => {
+      try {
+        const response = await fetch(`${API_URL}/deployments/${id}`);
+        // If the request fails (e.g., 404 Not Found), keep polling until the record appears.
+        if (!response.ok) {
+          // Only stop on server errors (5xx). For 404, wait and retry.
+          if (response.status >= 500) {
+            console.error('Server error while polling deployment status:', response.status);
+            return;
+          }
+          // 404 or other client errors: wait and retry.
+          await sleep(2000);
+          return checkStatus();
+        }
+
+        const deployment = await response.json();
+
+        // Update logs based on status
+        if (deployment.status === 'BUILD_TRIGGERED') {
+          setLogs(prev => [...prev, "Build triggered via GitHub Actions..."]);
+        } else if (deployment.status === 'BUILD_COMPLETED') {
+          setLogs(prev => [...prev, "Build completed successfully!", "Security Scan passed (Trivy).", "Rolling out canary deployment..."]);
+          toast.success('Security Clean. Rolling out Canary.', { id: 'deploy-toast' });
+        } else if (deployment.status === 'DEPLOYED_TO_EKS' || deployment.status === 'SUCCESS' || deployment.status === 'IMAGE_VALIDATED') {
+          setStatus('success');
+          setLogs(prev => [...prev, "AI Agent: Deployment successful! Canary is live."]);
+          toast.success('Canary Deployment Live!', { id: 'deploy-toast' });
+
+          await sleep(1000);
+          // Fire confetti
+          confetti({
+            particleCount: 150,
+            spread: 70,
+            origin: { y: 0.6 },
+            colors: ['#26ccff', '#a25afd', '#ff5e7e', '#88ff5a', '#fcff42', '#ffa62d', '#ff36ff']
+          });
+          return; // Stop polling
+        } else if (deployment.status && deployment.status.includes('FAILED')) {
+          setStatus('failed');
+          setLogs(prev => [...prev, `Deployment failed: ${deployment.error || 'Unknown error'}`]);
+          toast.error('Deployment Failed', { id: 'deploy-toast' });
+          return; // Stop polling
+        }
+
+        // Continue polling
+        await sleep(3000);
+        checkStatus();
+      } catch (error) {
+        console.error('Error polling deployment status:', error);
+      }
+    };
+
+    checkStatus();
   };
 
   const handlePromote = async () => {
     setLogs(prev => [...prev, "User: Confirmed. Promoting to 100%.", "AI Agent: Traffic split updated (100% New). Deployment Finalized. 🚀"]);
-    
+
     await sleep(1000);
-    
+
     // Fire celebratory confetti
     confetti({
       particleCount: 150,
@@ -160,23 +244,24 @@ export default function DeploymentConsole({ onBack }: DeploymentConsoleProps) {
     toast.success('Successfully Promoted to 100%!', { duration: 4000, icon: '🎉' });
 
     await sleep(2000);
-    setStatus('idle'); 
+    setStatus('idle');
     setLogs(["AI Agent: Ready for next deployment."]);
   };
 
   const handleRollback = async () => {
     setLogs(prev => [...prev, "User: Rollback requested.", "AI Agent: Reverting traffic to stable version... Done."]);
     toast.error('Rolling back to previous version...');
-    
+
     await sleep(1500);
     toast.success('Rollback Complete.');
-    
-    setStatus('idle'); 
+
+    setStatus('idle');
     setLogs(["AI Agent: Ready for next deployment."]);
   };
 
   const isProcessing = status === 'planning' || status === 'running';
   const isSuccess = status === 'success';
+  const isFailed = status === 'failed';
 
   return (
     <div className="flex h-full w-full overflow-hidden bg-stone-50">
@@ -186,58 +271,58 @@ export default function DeploymentConsole({ onBack }: DeploymentConsoleProps) {
       {/* Left Panel */}
       <div className="flex w-1/2 flex-col border-r border-slate-200 bg-white">
         <header className="flex items-center gap-4 border-b border-slate-100 p-6">
-          <button 
+          <button
             onClick={onBack}
             className="flex h-10 w-10 items-center justify-center rounded-full bg-slate-100 text-slate-500 hover:bg-slate-200 transition-colors"
           >
             <ArrowLeft size={20} />
           </button>
           <div>
-             <h2 className="text-xl font-bold text-slate-800">Deploying: demo-api</h2>
-             <p className="text-xs text-slate-400">Production Environment</p>
+            <h2 className="text-xl font-bold text-slate-800">Deploying: demo-api</h2>
+            <p className="text-xs text-slate-400">Production Environment</p>
           </div>
         </header>
 
         <div className="flex-1 overflow-y-auto p-8">
-            <div className="space-y-6">
-                {/* Animated plant visualization */}
-                <GrowingPlant status={status} />
+          <div className="space-y-6">
+            {/* Animated plant visualization */}
+            <GrowingPlant status={status} />
 
-                <div>
-                    <label className="mb-2 block text-sm font-bold text-slate-700">Strategy</label>
-                    <select className="w-full rounded-xl border border-slate-200 bg-slate-50 p-4 text-slate-700 focus:border-green-500 focus:outline-none transition-all">
-                    <option>Canary Deployment (Recommended)</option>
-                    <option>Blue-Green Deployment</option>
-                    </select>
-                </div>
-                
-                <button 
-                    onClick={handleDeploy}
-                    disabled={status !== 'idle'}
-                    className={`flex w-full items-center justify-center gap-2 rounded-xl py-4 text-lg font-bold text-white shadow-lg transition-all active:scale-95 
+            <div>
+              <label className="mb-2 block text-sm font-bold text-slate-700">Strategy</label>
+              <select className="w-full rounded-xl border border-slate-200 bg-slate-50 p-4 text-slate-700 focus:border-green-500 focus:outline-none transition-all">
+                <option>Canary Deployment (Recommended)</option>
+                <option>Blue-Green Deployment</option>
+              </select>
+            </div>
+
+            <button
+              onClick={handleDeploy}
+              disabled={status !== 'idle'}
+              className={`flex w-full items-center justify-center gap-2 rounded-xl py-4 text-lg font-bold text-white shadow-lg transition-all active:scale-95 
                       ${status === 'idle' ? 'bg-green-600 shadow-green-200 hover:bg-green-700' : ''}
                       ${isProcessing ? 'bg-slate-400 shadow-none cursor-not-allowed' : ''}
                       ${isSuccess ? 'bg-green-800 shadow-none cursor-not-allowed' : ''}
                     `}
-                >
-                    {status === 'idle' && <><Play size={20} /> Deploy with Agent</>}
-                    {isProcessing && <><Loader2 className="animate-spin" /> Processing...</>}
-                    {isSuccess && <><Check size={20} /> Deployment Ready</>}
-                </button>
+            >
+              {status === 'idle' && <><Play size={20} /> Deploy with Agent</>}
+              {isProcessing && <><Loader2 className="animate-spin" /> Processing...</>}
+              {isSuccess && <><Check size={20} /> Deployment Ready</>}
+            </button>
 
-                {/* Timeline Status */}
-                {status !== 'idle' && (
-                <div className="mt-4 rounded-2xl bg-slate-50 p-6 border border-slate-100 animate-in fade-in slide-in-from-bottom-2">
-                    <div className="flex justify-between gap-2">
-                        <TimelineStep icon={Terminal} label="Test & Lint" status={status === 'planning' ? 'running' : 'done'} />
-                        <div className="mt-4 h-0.5 flex-1 bg-slate-200"></div>
-                        <TimelineStep icon={ShieldCheck} label="Sec Scan" status={status === 'running' ? 'running' : (status === 'success' ? 'done' : 'pending')} />
-                        <div className="mt-4 h-0.5 flex-1 bg-slate-200"></div>
-                        <TimelineStep icon={Activity} label="Canary 10%" status={status === 'success' ? 'done' : (status === 'running' ? 'pending' : 'pending')} />
-                    </div>
+            {/* Timeline Status */}
+            {status !== 'idle' && (
+              <div className="mt-4 rounded-2xl bg-slate-50 p-6 border border-slate-100 animate-in fade-in slide-in-from-bottom-2">
+                <div className="flex justify-between gap-2">
+                  <TimelineStep icon={Terminal} label="Test & Lint" status={status === 'planning' ? 'running' : 'done'} />
+                  <div className="mt-4 h-0.5 flex-1 bg-slate-200"></div>
+                  <TimelineStep icon={ShieldCheck} label="Sec Scan" status={status === 'running' ? 'running' : (status === 'success' ? 'done' : 'pending')} />
+                  <div className="mt-4 h-0.5 flex-1 bg-slate-200"></div>
+                  <TimelineStep icon={Activity} label="Canary 10%" status={status === 'success' ? 'done' : (status === 'running' ? 'pending' : 'pending')} />
                 </div>
-                )}
-            </div>
+              </div>
+            )}
+          </div>
         </div>
       </div>
 
@@ -290,32 +375,32 @@ export default function DeploymentConsole({ onBack }: DeploymentConsoleProps) {
 
         {isSuccess && (
           <div className="border-t border-slate-200 bg-white p-6 shadow-[0_-4px_20px_rgba(0,0,0,0.05)] animate-in slide-in-from-bottom-full duration-500">
-             <div className="mb-4 flex items-center gap-2 text-green-700 font-bold text-lg">
-                <CheckCircle size={24} /> Deployment Successful
-             </div>
-             
-             <div className="flex gap-6">
-                 <div className="w-1/2">
-                     <MetricsChart />
-                 </div>
-                 <div className="w-1/2 flex flex-col justify-center gap-3">
-                    <p className="text-sm text-slate-500">Traffic is currently split <b>10% (New) / 90% (Old)</b>. Metrics indicate stability.</p>
-                    <div className="flex gap-3">
-                        <button 
-                          onClick={handlePromote}
-                          className="flex-1 rounded-xl bg-green-600 py-3 text-sm font-bold text-white hover:bg-green-700 shadow-md shadow-green-100 transition-colors"
-                        >
-                        Promote to 100%
-                        </button>
-                        <button 
-                          onClick={handleRollback}
-                          className="flex-1 rounded-xl bg-white border-2 border-slate-200 py-3 text-sm font-bold text-slate-600 hover:bg-slate-50 hover:text-red-500 hover:border-red-200 transition-colors"
-                        >
-                        Rollback
-                        </button>
-                    </div>
-                 </div>
-             </div>
+            <div className="mb-4 flex items-center gap-2 text-green-700 font-bold text-lg">
+              <CheckCircle size={24} /> Deployment Successful
+            </div>
+
+            <div className="flex gap-6">
+              <div className="w-1/2">
+                <MetricsChart />
+              </div>
+              <div className="w-1/2 flex flex-col justify-center gap-3">
+                <p className="text-sm text-slate-500">Traffic is currently split <b>10% (New) / 90% (Old)</b>. Metrics indicate stability.</p>
+                <div className="flex gap-3">
+                  <button
+                    onClick={handlePromote}
+                    className="flex-1 rounded-xl bg-green-600 py-3 text-sm font-bold text-white hover:bg-green-700 shadow-md shadow-green-100 transition-colors"
+                  >
+                    Promote to 100%
+                  </button>
+                  <button
+                    onClick={handleRollback}
+                    className="flex-1 rounded-xl bg-white border-2 border-slate-200 py-3 text-sm font-bold text-slate-600 hover:bg-slate-50 hover:text-red-500 hover:border-red-200 transition-colors"
+                  >
+                    Rollback
+                  </button>
+                </div>
+              </div>
+            </div>
           </div>
         )}
       </div>

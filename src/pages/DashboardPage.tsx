@@ -1,27 +1,34 @@
-import { Leaf, AlertCircle, ArrowRight, Sprout } from 'lucide-react';
+import { useState, useEffect } from 'react';
+import { Leaf, AlertCircle, ArrowRight, Sprout, Trash2 } from 'lucide-react';
 
 // --- Type definitions & mock data ---
 interface Service {
-  id: number;
+  id: string;
   name: string;
   status: 'healthy' | 'warning';
   version: string;
   pods: number;
   lastDeploy: string;
   position: { x: number; y: number }; // Position on garden (percentage)
+  githubRepo?: string;
+  githubOwner?: string;
 }
 
-const services: Service[] = [
-  { id: 1, name: 'demo-api', status: 'healthy', version: 'v1.0.2', pods: 3, lastDeploy: '2h ago', position: { x: 25, y: 50 } },
-  { id: 2, name: 'demo-frontend', status: 'warning', version: 'v2.1.0', pods: 2, lastDeploy: '1d ago', position: { x: 75, y: 50 } },
-];
+interface RecentDeployment {
+  id: string;
+  serviceId: string;
+  imageTag: string;
+  status: string;
+  createdAt: number;
+}
 
 interface ServiceCardProps {
   service: Service;
   onManage: () => void;
+  onDelete: (id: string) => void;
 }
 
-const ServiceCard = ({ service, onManage }: ServiceCardProps) => {
+const ServiceCard = ({ service, onManage, onDelete }: ServiceCardProps) => {
   const isHealthy = service.status === 'healthy';
   // ServiceCard UI
   return (
@@ -30,20 +37,32 @@ const ServiceCard = ({ service, onManage }: ServiceCardProps) => {
       ${isHealthy ? 'border-green-100 bg-white' : 'border-amber-100 bg-amber-50'}
     `}>
       <div className={`absolute -right-4 -top-4 h-24 w-24 rounded-full opacity-20 
-        ${isHealthy ? 'bg-green-200' : 'bg-amber-200'}`} 
+        ${isHealthy ? 'bg-green-200' : 'bg-amber-200'}`}
       />
-      <div className="relative z-10 flex items-start justify-between">
-        <div className="flex items-center gap-3">
-          <div className={`rounded-full p-3 ${isHealthy ? 'bg-green-100 text-green-600' : 'bg-amber-100 text-amber-600'}`}>
-            {isHealthy ? <Leaf size={24} /> : <AlertCircle size={24} />}
+      <div className="relative z-10">
+        <div className="flex items-start justify-between">
+          <div className="flex items-center gap-3">
+            <div className={`rounded-full p-3 ${isHealthy ? 'bg-green-100 text-green-600' : 'bg-amber-100 text-amber-600'}`}>
+              {isHealthy ? <Leaf size={24} /> : <AlertCircle size={24} />}
+            </div>
+            <div>
+              <h3 className="text-lg font-bold text-slate-800">{service.name}</h3>
+              <span className={`text-xs font-medium px-2 py-0.5 rounded-full 
+                ${isHealthy ? 'bg-green-100 text-green-700' : 'bg-amber-100 text-amber-700'}`}>
+                {service.status.toUpperCase()}
+              </span>
+            </div>
           </div>
-          <div>
-            <h3 className="text-lg font-bold text-slate-800">{service.name}</h3>
-            <span className={`text-xs font-medium px-2 py-0.5 rounded-full 
-              ${isHealthy ? 'bg-green-100 text-green-700' : 'bg-amber-100 text-amber-700'}`}>
-              {service.status.toUpperCase()}
-            </span>
-          </div>
+          <button
+            onClick={(e) => {
+              e.stopPropagation();
+              onDelete(service.id);
+            }}
+            className="rounded-lg p-2 text-red-400 hover:bg-red-50 hover:text-red-600 transition-colors"
+            title="Delete service"
+          >
+            <Trash2 size={16} />
+          </button>
         </div>
       </div>
       <div className="mt-6 grid grid-cols-2 gap-4 text-sm text-slate-600">
@@ -56,7 +75,7 @@ const ServiceCard = ({ service, onManage }: ServiceCardProps) => {
           <p className="font-medium">{service.lastDeploy}</p>
         </div>
       </div>
-      <button 
+      <button
         onClick={onManage}
         className="mt-6 flex w-full items-center justify-center gap-2 rounded-xl bg-slate-900 py-3 text-sm font-bold text-white transition-all hover:bg-green-600 hover:shadow-lg hover:shadow-green-200"
       >
@@ -72,6 +91,83 @@ interface DashboardPageProps {
 }
 
 export default function DashboardPage({ onManage, onStartDeploy }: DashboardPageProps) {
+  const [services, setServices] = useState<Service[]>([]);
+  const [recentDeployments, setRecentDeployments] = useState<RecentDeployment[]>([]);
+  const [loading, setLoading] = useState(true);
+
+  const API_URL = import.meta.env.VITE_API_URL;
+  const USE_MOCK = !API_URL || API_URL === 'mock';
+
+  useEffect(() => {
+    fetchData();
+  }, []);
+
+  const fetchData = async () => {
+    if (USE_MOCK) {
+      // Mock data fallback
+      const mockServices = [
+        { id: '1', name: 'demo-api', status: 'healthy' as const, version: 'v1.0.2', pods: 3, lastDeploy: '2h ago', position: { x: 25, y: 50 } },
+        { id: '2', name: 'demo-frontend', status: 'warning' as const, version: 'v2.1.0', pods: 2, lastDeploy: '1d ago', position: { x: 75, y: 50 } },
+      ];
+      setServices(mockServices);
+      setLoading(false);
+      return;
+    }
+
+    try {
+      // Fetch services
+      const servicesRes = await fetch(`${API_URL}/services`);
+      if (servicesRes.ok) {
+        const servicesData = await servicesRes.json();
+        const mappedServices = servicesData.map((svc: any, idx: number) => ({
+          id: svc.id || String(idx),
+          name: svc.name || svc.serviceName || 'unknown',
+          status: 'healthy' as const,
+          version: 'latest',
+          pods: 3,
+          lastDeploy: 'N/A',
+          position: { x: 25 + idx * 50, y: 50 },
+          githubRepo: svc.githubRepo,
+          githubOwner: svc.githubOwner,
+        }));
+        setServices(mappedServices);
+      }
+
+      // Fetch recent deployments
+      const deploymentsRes = await fetch(`${API_URL}/deployments`);
+      if (deploymentsRes.ok) {
+        const deploymentsData = await deploymentsRes.json();
+        setRecentDeployments(deploymentsData.slice(0, 5));
+      }
+    } catch (err) {
+      console.error('Failed to fetch dashboard data:', err);
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const handleDeleteService = async (serviceId: string) => {
+    if (!confirm('Are you sure you want to delete this service?')) return;
+
+    if (USE_MOCK) {
+      setServices(services.filter(s => s.id !== serviceId));
+      return;
+    }
+
+    try {
+      const response = await fetch(`${API_URL}/services/${serviceId}`, {
+        method: 'DELETE',
+      });
+
+      if (!response.ok) throw new Error('Failed to delete service');
+
+      // Remove from local state
+      setServices(services.filter(s => s.id !== serviceId));
+    } catch (err: any) {
+      alert(`Error deleting service: ${err.message}`);
+    }
+  };
+
   return (
     // Fill available height so the parent container keeps layout tight
     <div className="min-h-full bg-stone-50 p-8">
@@ -79,6 +175,7 @@ export default function DashboardPage({ onManage, onStartDeploy }: DashboardPage
         <div>
           <h1 className="text-3xl font-bold text-slate-800">My Digital Garden 🌿</h1>
           <p className="text-slate-500">Manage your Kubernetes deployments with peace of mind.</p>
+          {USE_MOCK && <p className="text-xs text-amber-600 mt-2">⚠️ Running in MOCK mode</p>}
         </div>
         <button
           onClick={onStartDeploy}
@@ -87,12 +184,12 @@ export default function DashboardPage({ onManage, onStartDeploy }: DashboardPage
           🌱 Start Deployment
         </button>
       </header>
-      
+
       {/* Garden Visualization */}
       <div className="mb-10 relative w-full max-w-2xl rounded-3xl overflow-hidden shadow-xl" style={{ aspectRatio: '16/8' }}>
-        <img 
-          src="/garden.png" 
-          alt="Digital Garden" 
+        <img
+          src="/garden.png"
+          alt="Digital Garden"
           className="w-full h-full object-cover"
         />
         {/* Sprouts positioned on the garden */}
@@ -110,20 +207,18 @@ export default function DashboardPage({ onManage, onStartDeploy }: DashboardPage
               onClick={() => onManage()}
             >
               <div className="relative">
-                <div className={`rounded-full p-3 shadow-lg transition-all ${
-                  isHealthy 
-                    ? 'bg-green-100 text-green-600 border-2 border-green-300' 
+                <div className={`rounded-full p-3 shadow-lg transition-all ${isHealthy
+                    ? 'bg-green-100 text-green-600 border-2 border-green-300'
                     : 'bg-amber-100 text-amber-600 border-2 border-amber-300'
-                }`}>
+                  }`}>
                   <Sprout size={32} strokeWidth={2} />
                 </div>
                 {/* Tooltip on hover */}
                 <div className="absolute bottom-full left-1/2 transform -translate-x-1/2 mb-2 opacity-0 group-hover:opacity-100 transition-opacity pointer-events-none">
                   <div className="bg-slate-900 text-white text-xs font-bold px-3 py-2 rounded-lg whitespace-nowrap shadow-lg">
                     {service.name}
-                    <div className={`text-[10px] mt-1 ${
-                      isHealthy ? 'text-green-300' : 'text-amber-300'
-                    }`}>
+                    <div className={`text-[10px] mt-1 ${isHealthy ? 'text-green-300' : 'text-amber-300'
+                      }`}>
                       {service.status.toUpperCase()}
                     </div>
                     <div className="absolute bottom-0 left-1/2 transform -translate-x-1/2 translate-y-full w-0 h-0 border-l-4 border-r-4 border-t-4 border-transparent border-t-slate-900"></div>
@@ -134,11 +229,16 @@ export default function DashboardPage({ onManage, onStartDeploy }: DashboardPage
           );
         })}
       </div>
-      
+
       {/* Service Cards */}
       <div className="grid grid-cols-1 gap-6 md:grid-cols-2 lg:grid-cols-3">
         {services.map((svc) => (
-          <ServiceCard key={svc.id} service={svc} onManage={onManage} />
+          <ServiceCard
+            key={svc.id}
+            service={svc}
+            onManage={onManage}
+            onDelete={handleDeleteService}
+          />
         ))}
       </div>
     </div>
