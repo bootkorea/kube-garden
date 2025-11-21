@@ -270,6 +270,22 @@ export default function DeploymentConsole({ onBack, deploymentConfig }: Deployme
           } else if (effectiveStatus === 'BUILD_COMPLETED') {
             setLogs(prev => [...prev, "Build completed successfully!", "Security Scan passed (Trivy).", "Rolling out canary deployment..."]);
             toast.success('Security Clean. Rolling out Canary.', { id: 'deploy-toast' });
+
+            // Simulate deployment completion after 3 seconds
+            await sleep(3000);
+            setStatus('success');
+            setLogs(prev => [...prev, "AI Agent: Deployment successful! Canary is live."]);
+            toast.success('Canary Deployment Live!', { id: 'deploy-toast' });
+
+            await sleep(1000);
+            // Fire confetti
+            confetti({
+              particleCount: 150,
+              spread: 70,
+              origin: { y: 0.6 },
+              colors: ['#26ccff', '#a25afd', '#ff5e7e', '#88ff5a', '#fcff42', '#ffa62d', '#ff36ff']
+            });
+            return; // Stop polling
           } else if (effectiveStatus === 'DEPLOYED_TO_EKS' || effectiveStatus === 'SUCCESS' || effectiveStatus === 'IMAGE_VALIDATED') {
             setStatus('success');
             setLogs(prev => [...prev, "AI Agent: Deployment successful! Canary is live."]);
@@ -284,7 +300,7 @@ export default function DeploymentConsole({ onBack, deploymentConfig }: Deployme
               colors: ['#26ccff', '#a25afd', '#ff5e7e', '#88ff5a', '#fcff42', '#ffa62d', '#ff36ff']
             });
             return; // Stop polling
-          } else if (currentStatus && currentStatus.includes('FAILED')) {
+          } else if (effectiveStatus && effectiveStatus.includes('FAILED')) {
             setStatus('failed');
             setLogs(prev => [...prev, `Deployment failed: ${deployment.error || 'Unknown error'}`]);
             toast.error('Deployment Failed', { id: 'deploy-toast' });
