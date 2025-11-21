@@ -1,4 +1,3 @@
-import React from 'react';
 import { Volume2, VolumeX, Bot } from 'lucide-react';
 import { useAudio } from '../components/AudioContext';
 
@@ -17,7 +16,7 @@ export default function SettingsPage() {
         <div className="flex items-center justify-between rounded-2xl border border-slate-200 bg-white p-6 shadow-sm">
           <div className="flex items-center gap-4">
             <div className={`rounded-full p-3 ${bgm ? 'bg-green-100 text-green-600' : 'bg-slate-100 text-slate-400'}`}>
-               {bgm ? <Volume2 size={24} /> : <VolumeX size={24} />}
+              {bgm ? <Volume2 size={24} /> : <VolumeX size={24} />}
             </div>
             <div>
               <h3 className="font-bold text-slate-800">Background Music</h3>
@@ -34,7 +33,7 @@ export default function SettingsPage() {
         <div className="flex items-center justify-between rounded-2xl border border-slate-200 bg-white p-6 shadow-sm">
           <div className="flex items-center gap-4">
             <div className="rounded-full bg-blue-50 p-3 text-blue-600">
-               <Bot size={24} />
+              <Bot size={24} />
             </div>
             <div>
               <h3 className="font-bold text-slate-800">AI Agent Personality</h3>
