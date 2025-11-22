@@ -397,7 +397,7 @@ export default function DashboardPage({ onManage, onStartDeploy }: DashboardPage
         </div>
 
         {/* Garden Health Check Panel */}
-        <div className="lg:w-80 flex-shrink-0 rounded-2xl border-2 border-green-100 bg-white p-6 shadow-lg flex flex-col" style={{ aspectRatio: '16/8', maxHeight: '100%' }}>
+        <div className="lg:w-80 flex-shrink-0 rounded-2xl border-2 border-slate-200 bg-white p-6 shadow-lg flex flex-col" style={{ aspectRatio: '16/8', maxHeight: '100%' }}>
           <h2 className="text-xl font-bold text-slate-800 mb-6">{t.healthCheck}</h2>
           <div className="flex items-center justify-center gap-4 mb-6 flex-shrink-0">
             {/* Healthy */}
