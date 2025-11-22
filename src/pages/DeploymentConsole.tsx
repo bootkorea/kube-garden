@@ -160,6 +160,7 @@ export default function DeploymentConsole({ onBack, deploymentConfig, isRedeploy
         planCreated: 'Plan Created! Running Tests.',
         securityClear: 'Security Clean. Rolling out Canary.',
         canaryLive: 'Canary Deployment Live!',
+        deploymentSuccess: 'Deployment Successful! 🎉',
         failedStart: 'Deployment failed to start',
         failed: 'Deployment Failed',
         promoteSuccess: 'Successfully Promoted to 100%!',
@@ -214,6 +215,7 @@ export default function DeploymentConsole({ onBack, deploymentConfig, isRedeploy
         planCreated: '計画を作成しました。テストを実行中。',
         securityClear: 'セキュリティ検査クリア。カナリアを展開中。',
         canaryLive: 'カナリアデプロイが稼働中！',
+        deploymentSuccess: 'デプロイ成功！ 🎉',
         failedStart: 'デプロイ開始に失敗しました',
         failed: 'デプロイ失敗',
         promoteSuccess: '100% へ昇格しました！',
@@ -409,12 +411,22 @@ export default function DeploymentConsole({ onBack, deploymentConfig, isRedeploy
             toast.success(t.toast.canaryLive, { id: 'deploy-toast' });
 
             await sleep(1000);
-            // Fire confetti
+            // Fire confetti and show success notification
             confetti({
               particleCount: 150,
               spread: 70,
               origin: { y: 0.6 },
               colors: ['#26ccff', '#a25afd', '#ff5e7e', '#88ff5a', '#fcff42', '#ffa62d', '#ff36ff']
+            });
+            toast.success(t.toast.deploymentSuccess, { 
+              duration: 3000,
+              icon: <CheckCircle size={24} className="text-white" />,
+              style: {
+                background: '#10b981',
+                color: '#fff',
+                fontSize: '16px',
+                fontWeight: 'bold',
+              }
             });
             return; // Stop polling
           } else if (effectiveStatus === 'DEPLOYED_TO_EKS' || effectiveStatus === 'SUCCESS' || effectiveStatus === 'IMAGE_VALIDATED') {
@@ -423,12 +435,22 @@ export default function DeploymentConsole({ onBack, deploymentConfig, isRedeploy
             toast.success(t.toast.canaryLive, { id: 'deploy-toast' });
 
             await sleep(1000);
-            // Fire confetti
+            // Fire confetti and show success notification
             confetti({
               particleCount: 150,
               spread: 70,
               origin: { y: 0.6 },
               colors: ['#26ccff', '#a25afd', '#ff5e7e', '#88ff5a', '#fcff42', '#ffa62d', '#ff36ff']
+            });
+            toast.success(t.toast.deploymentSuccess, { 
+              duration: 3000,
+              icon: <CheckCircle size={24} className="text-white" />,
+              style: {
+                background: '#10b981',
+                color: '#fff',
+                fontSize: '16px',
+                fontWeight: 'bold',
+              }
             });
             return; // Stop polling
           } else if (effectiveStatus && effectiveStatus.includes('FAILED')) {
