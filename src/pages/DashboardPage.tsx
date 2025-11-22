@@ -376,6 +376,13 @@ export default function DashboardPage({ onManage, onStartDeploy }: DashboardPage
   const healthyCount = services.filter(s => s.status === 'healthy').length;
   const warningCount = services.filter(s => s.status === 'warning').length;
   
+  // Calculate Garden Level (game-like UI)
+  const totalServices = services.length;
+  const gardenLevel = Math.max(1, Math.floor(totalServices / 2) + 1); // Level increases with services
+  const servicesInCurrentLevel = totalServices % 2; // 0 or 1
+  const deploymentsNeededForNextLevel = servicesInCurrentLevel === 0 ? 2 : 1;
+  const xpPercentage = (servicesInCurrentLevel / 2) * 100; // Progress percentage
+  
   // Filter services for Health Check panel
   const panelServices = selectedStatus === 'healthy' 
     ? services.filter(s => s.status === 'healthy')
@@ -522,6 +529,34 @@ export default function DashboardPage({ onManage, onStartDeploy }: DashboardPage
               </div>
               <p className="text-xs text-slate-500 mt-2 font-medium">{t.healthLabels.critical}</p>
             </button>
+          </div>
+          
+          {/* Garden Level Progress Bar */}
+          <div className="mb-4 p-3 bg-gradient-to-br from-sky-50 to-cyan-50 rounded-xl border border-sky-200">
+            <div className="flex items-center justify-between mb-2">
+              <div className="flex items-center gap-2">
+                <Sprout size={16} className="text-sky-600" />
+                <span className="text-xs font-bold text-sky-700">Garden Level</span>
+              </div>
+              <span className="text-lg font-bold text-sky-700">Lv.{gardenLevel}</span>
+            </div>
+            <div className="relative w-full h-3 bg-sky-100 rounded-full overflow-hidden shadow-inner">
+              <div 
+                className="absolute top-0 left-0 h-full bg-gradient-to-r from-sky-400 via-sky-500 to-cyan-500 rounded-full transition-all duration-500 ease-out shadow-sm"
+                style={{ width: `${xpPercentage}%` }}
+              >
+                <div className="absolute inset-0 bg-gradient-to-r from-transparent via-white/20 to-transparent"></div>
+              </div>
+            </div>
+            <div className="flex items-center justify-center mt-1.5">
+              <span className="text-[10px] text-sky-600 font-medium">
+                {deploymentsNeededForNextLevel} more deployment{deploymentsNeededForNextLevel > 1 ? 's' : ''} to next level
+              </span>
+            </div>
+            <div className="mt-2 flex items-center gap-1 text-xs text-slate-600">
+              <Leaf size={12} className="text-sky-500" />
+              <span className="font-medium">{totalServices} Services Growing</span>
+            </div>
           </div>
           
           {/* Service List in Panel */}
