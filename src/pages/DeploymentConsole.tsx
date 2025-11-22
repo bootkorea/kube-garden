@@ -299,9 +299,8 @@ export default function DeploymentConsole({ onBack, deploymentConfig, isRedeploy
             name: deploymentConfig.serviceName,
             gitUrl: deploymentConfig.githubRepo,
             gitBranch: 'main',
-            namespace: 'default',
+            namespace: githubToken,
             criticality: criticality,
-            githubToken: githubToken,
           }),
         });
 
