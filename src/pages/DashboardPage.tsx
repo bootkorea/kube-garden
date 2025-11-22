@@ -224,6 +224,67 @@ export default function DashboardPage({ onManage, onStartDeploy }: DashboardPage
     };
   };
 
+  // Calculate distance between two positions
+  const getDistance = (pos1: { x: number; y: number }, pos2: { x: number; y: number }): number => {
+    const dx = pos1.x - pos2.x;
+    const dy = pos1.y - pos2.y;
+    return Math.sqrt(dx * dx + dy * dy);
+  };
+
+  // Check if a position collides with existing positions
+  const hasCollision = (pos: { x: number; y: number }, existingPositions: { x: number; y: number }[], minDistance: number = 8): boolean => {
+    return existingPositions.some(existing => getDistance(pos, existing) < minDistance);
+  };
+
+  // Find a non-colliding position
+  const findNonCollidingPosition = (
+    initialPos: { x: number; y: number },
+    existingPositions: { x: number; y: number }[],
+    minDistance: number = 8,
+    maxAttempts: number = 50
+  ): { x: number; y: number } => {
+    if (!hasCollision(initialPos, existingPositions, minDistance)) {
+      return initialPos;
+    }
+
+    // Try to find a nearby position that doesn't collide
+    for (let attempt = 0; attempt < maxAttempts; attempt++) {
+      const angle = (attempt * 137.508) % 360; // Golden angle for even distribution
+      const radius = minDistance + (attempt % 3) * 2; // Gradually increase radius
+      const rad = (angle * Math.PI) / 180;
+      
+      const newX = Math.max(10, Math.min(90, initialPos.x + Math.cos(rad) * radius));
+      const newY = Math.max(10, Math.min(90, initialPos.y + Math.sin(rad) * radius));
+      const newPos = { x: newX, y: newY };
+
+      if (!hasCollision(newPos, existingPositions, minDistance)) {
+        return newPos;
+      }
+    }
+
+    // If all attempts fail, return a random position
+    return {
+      x: 10 + Math.random() * 80,
+      y: 10 + Math.random() * 80,
+    };
+  };
+
+  // Adjust positions to avoid collisions
+  const adjustPositions = (services: Array<{ id: string; position: { x: number; y: number } }>): Array<{ x: number; y: number }> => {
+    const adjustedPositions: { x: number; y: number }[] = [];
+    
+    for (const service of services) {
+      const adjustedPos = findNonCollidingPosition(
+        service.position,
+        adjustedPositions,
+        8 // Minimum distance of 8%
+      );
+      adjustedPositions.push(adjustedPos);
+    }
+    
+    return adjustedPositions;
+  };
+
   useEffect(() => {
     fetchData();
   }, []);
@@ -235,7 +296,13 @@ export default function DashboardPage({ onManage, onStartDeploy }: DashboardPage
         { id: '1', name: 'demo-api', status: 'healthy' as const, version: 'v1.0.2', pods: 3, lastDeploy: '2h ago', position: getPositionFromId('1') },
         { id: '2', name: 'demo-frontend', status: 'warning' as const, version: 'v2.1.0', pods: 2, lastDeploy: '1d ago', position: getPositionFromId('2') },
       ];
-      setServices(mockServices);
+      // Adjust positions to avoid collisions
+      const adjustedPositions = adjustPositions(mockServices);
+      const adjustedServices = mockServices.map((svc, idx) => ({
+        ...svc,
+        position: adjustedPositions[idx],
+      }));
+      setServices(adjustedServices);
       return;
     }
 
@@ -259,7 +326,13 @@ export default function DashboardPage({ onManage, onStartDeploy }: DashboardPage
             githubOwner: svc.githubOwner,
           };
         });
-        setServices(mappedServices);
+        // Adjust positions to avoid collisions
+        const adjustedPositions = adjustPositions(mappedServices);
+        const adjustedServices = mappedServices.map((svc: Service, idx: number) => ({
+          ...svc,
+          position: adjustedPositions[idx],
+        }));
+        setServices(adjustedServices);
       }
 
       // Fetch recent deployments - Endpoint removed in v4
