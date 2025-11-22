@@ -21,7 +21,7 @@ export default function HistoryPage() {
   const { language } = useLanguage();
   const copy = {
     en: {
-      title: 'Deployment Journal 📜',
+      title: 'Deployment Log 📜',
       subtitle: 'Track all gardening activities and growth records.',
       mock: '⚠️ Running in MOCK mode (Set VITE_API_URL to enable real backend)',
       confirmDelete: 'Are you sure you want to delete this deployment?',
@@ -31,8 +31,7 @@ export default function HistoryPage() {
       table: {
         status: 'Status',
         service: 'Service / Version',
-        strategy: 'Strategy',
-        summary: 'Summary',
+        summary: 'Information',
         time: 'Time',
         actions: 'Actions',
         deleteTitle: 'Delete deployment',
@@ -55,7 +54,6 @@ export default function HistoryPage() {
       table: {
         status: 'ステータス',
         service: 'サービス / バージョン',
-        strategy: '戦略',
         summary: 'サマリー',
         time: '時間',
         actions: '操作',
@@ -180,7 +178,6 @@ export default function HistoryPage() {
             <tr>
               <th className="px-6 py-4 font-bold">{t.table.status}</th>
               <th className="px-6 py-4 font-bold">{t.table.service}</th>
-              <th className="px-6 py-4 font-bold">{t.table.strategy}</th>
               <th className="px-6 py-4 font-bold">{t.table.summary}</th>
               <th className="px-6 py-4 font-bold">{t.table.time}</th>
               <th className="px-6 py-4 font-bold">{t.table.actions}</th>
@@ -189,7 +186,7 @@ export default function HistoryPage() {
           <tbody className="divide-y divide-slate-100">
             {deployments.length === 0 ? (
               <tr>
-                <td colSpan={6} className="px-6 py-8 text-center text-slate-400">
+                <td colSpan={5} className="px-6 py-8 text-center text-slate-400">
                   {t.empty}
                 </td>
               </tr>
@@ -204,9 +201,6 @@ export default function HistoryPage() {
                     <div className="flex items-center gap-1 text-xs font-mono text-slate-400">
                       <GitCommit size={12} /> {record.imageTag}
                     </div>
-                  </td>
-                  <td className="px-6 py-4">
-                    <span className="rounded-md bg-slate-100 px-2 py-1 text-xs font-medium text-slate-600 capitalize">{record.strategy}</span>
                   </td>
                   <td className="px-6 py-4 text-slate-600 max-w-xs truncate">
                     {record.description || record.error || '-'}
