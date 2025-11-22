@@ -529,6 +529,14 @@ export default function DeploymentConsole({ onBack, deploymentConfig, isRedeploy
             {/* Animated plant visualization */}
             <GrowingPlant status={status} labels={t.plant} />
 
+            {/* Strategy Info */}
+            {status === 'idle' && (
+              <div className="mb-3 flex items-center justify-center gap-2 text-sm text-slate-500">
+                <Info size={16} className="text-blue-500" />
+                <span>{t.info.strategy}</span>
+              </div>
+            )}
+
             <button
               onClick={handleDeploy}
               disabled={status !== 'idle'}
@@ -544,14 +552,6 @@ export default function DeploymentConsole({ onBack, deploymentConfig, isRedeploy
               {isSuccess && <><Check size={20} /> {t.buttons.ready}</>}
               {isFailed && <><AlertCircle size={20} /> {t.buttons.failed}</>}
             </button>
-
-            {/* Strategy Info */}
-            {status === 'idle' && (
-              <div className="mt-3 flex items-center justify-center gap-2 text-sm text-slate-500">
-                <Info size={16} className="text-blue-500" />
-                <span>{t.info.strategy}</span>
-              </div>
-            )}
 
             {/* Timeline Status */}
             {status !== 'idle' && (
