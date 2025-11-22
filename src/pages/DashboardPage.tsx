@@ -9,11 +9,12 @@ interface Service {
   status: 'healthy' | 'warning';
   version: string;
   pods: number;
-  lastDeploy: string;
+  lastDeploy: number | null; // Timestamp in milliseconds, null if never deployed
   position: { x: number; y: number }; // Position on garden (percentage)
   githubRepo?: string;
   githubOwner?: string;
 }
+
 
 
 
@@ -29,9 +30,10 @@ interface ServiceCardProps {
     healthy: string;
     warning: string;
   };
+  formatTime: (timestamp: number | null) => string;
 }
 
-const ServiceCard = ({ service, onManage, onDelete, copy }: ServiceCardProps) => {
+const ServiceCard = ({ service, onManage, onDelete, copy, formatTime }: ServiceCardProps) => {
   const isHealthy = service.status === 'healthy';
   // ServiceCard UI
   return (
@@ -75,7 +77,7 @@ const ServiceCard = ({ service, onManage, onDelete, copy }: ServiceCardProps) =>
         </div>
         <div>
           <p className="text-xs text-slate-400">{copy.lastWatered}</p>
-          <p className="font-medium">{service.lastDeploy}</p>
+          <p className="font-medium">{formatTime(service.lastDeploy)}</p>
         </div>
       </div>
       <button
@@ -209,6 +211,22 @@ export default function DashboardPage({ onManage, onStartDeploy }: DashboardPage
   const API_URL = import.meta.env.VITE_API_URL;
   const USE_MOCK = !API_URL || API_URL === 'mock';
 
+  // Format time similar to HistoryPage
+  const formatTime = (timestamp: number | null) => {
+    if (timestamp === null) {
+      return language === 'ja' ? '未配信' : 'N/A';
+    }
+    const diff = Date.now() - timestamp;
+    const minutes = Math.floor(diff / 60000);
+    const hours = Math.floor(diff / 3600000);
+    const days = Math.floor(diff / 86400000);
+
+    if (minutes < 1) return language === 'ja' ? 'たった今' : 'Just now';
+    if (minutes < 60) return language === 'ja' ? `${minutes}分前` : `${minutes}m ago`;
+    if (hours < 24) return language === 'ja' ? `${hours}時間前` : `${hours}h ago`;
+    return language === 'ja' ? `${days}日前` : `${days}d ago`;
+  };
+
   // Helper function to generate consistent random position based on service ID
   // Same ID will always get the same position
   const getPositionFromId = (id: string): { x: number; y: number } => {
@@ -297,8 +315,8 @@ export default function DashboardPage({ onManage, onStartDeploy }: DashboardPage
     if (USE_MOCK) {
       // Mock data fallback
       const mockServices = [
-        { id: '1', name: 'demo-api', status: 'healthy' as const, version: 'v1.0.2', pods: 3, lastDeploy: '2h ago', position: getPositionFromId('1') },
-        { id: '2', name: 'demo-frontend', status: 'warning' as const, version: 'v2.1.0', pods: 2, lastDeploy: '1d ago', position: getPositionFromId('2') },
+        { id: '1', name: 'demo-api', status: 'healthy' as const, version: 'v1.0.2', pods: 3, lastDeploy: Date.now() - 2 * 3600000, position: getPositionFromId('1') },
+        { id: '2', name: 'demo-frontend', status: 'warning' as const, version: 'v2.1.0', pods: 2, lastDeploy: Date.now() - 86400000, position: getPositionFromId('2') },
       ];
       // Adjust positions to avoid collisions
       const adjustedPositions = adjustPositions(mockServices);
@@ -313,38 +331,60 @@ export default function DashboardPage({ onManage, onStartDeploy }: DashboardPage
     try {
       // Fetch services
       const servicesRes = await fetch(`${API_URL}/services`);
+      let servicesList: any[] = [];
       if (servicesRes.ok) {
         const servicesData = await servicesRes.json();
-        const list = Array.isArray(servicesData) ? servicesData : (servicesData.services || []);
-        const mappedServices = list.map((svc: any, idx: number) => {
-          const serviceId = svc.id || String(idx);
-          return {
-            id: serviceId,
-            name: svc.name || svc.serviceName || 'unknown',
-            status: 'healthy' as const,
-            version: 'latest',
-            pods: 3,
-            lastDeploy: 'N/A',
-            position: getPositionFromId(serviceId),
-            githubRepo: svc.githubRepo,
-            githubOwner: svc.githubOwner,
-          };
-        });
-        // Adjust positions to avoid collisions
-        const adjustedPositions = adjustPositions(mappedServices);
-        const adjustedServices = mappedServices.map((svc: Service, idx: number) => ({
-          ...svc,
-          position: adjustedPositions[idx],
-        }));
-        setServices(adjustedServices);
+        servicesList = Array.isArray(servicesData) ? servicesData : (servicesData.services || []);
       }
 
-      // Fetch recent deployments - Endpoint removed in v4
-      // const deploymentsRes = await fetch(`${API_URL}/deployments`);
-      // if (deploymentsRes.ok) {
-      //   const deploymentsData = await deploymentsRes.json();
-      //   setRecentDeployments(deploymentsData.slice(0, 5));
-      // }
+      // Fetch deployments to get last deployment time for each service
+      let deploymentsMap: Map<string, number> = new Map();
+      try {
+        const deploymentsRes = await fetch(`${API_URL}/deployments`);
+        if (deploymentsRes.ok) {
+          const deploymentsData = await deploymentsRes.json();
+          const deployments = Array.isArray(deploymentsData) ? deploymentsData : (deploymentsData.deployments || []);
+          
+          // Create a map of service name to latest deployment timestamp
+          deployments.forEach((deployment: any) => {
+            const serviceName = deployment.serviceName || deployment.serviceId;
+            const createdAt = deployment.createdAt;
+            if (serviceName && createdAt) {
+              const existingTime = deploymentsMap.get(serviceName);
+              if (!existingTime || createdAt > existingTime) {
+                deploymentsMap.set(serviceName, createdAt);
+              }
+            }
+          });
+        }
+      } catch (err) {
+        console.error('Failed to fetch deployments:', err);
+      }
+
+      const mappedServices = servicesList.map((svc: any, idx: number) => {
+        const serviceId = svc.id || String(idx);
+        const serviceName = svc.name || svc.serviceName || 'unknown';
+        const lastDeployTimestamp = deploymentsMap.get(serviceName) || null;
+        
+        return {
+          id: serviceId,
+          name: serviceName,
+          status: 'healthy' as const,
+          version: 'latest',
+          pods: 3,
+          lastDeploy: lastDeployTimestamp,
+          position: getPositionFromId(serviceId),
+          githubRepo: svc.githubRepo,
+          githubOwner: svc.githubOwner,
+        };
+      });
+      // Adjust positions to avoid collisions
+      const adjustedPositions = adjustPositions(mappedServices);
+      const adjustedServices = mappedServices.map((svc: Service, idx: number) => ({
+        ...svc,
+        position: adjustedPositions[idx],
+      }));
+      setServices(adjustedServices);
     } catch (err) {
       console.error('Failed to fetch dashboard data:', err);
     }
@@ -401,9 +441,12 @@ export default function DashboardPage({ onManage, onStartDeploy }: DashboardPage
       if (sortBy === 'name') {
         return a.name.localeCompare(b.name);
       } else {
-        // For lastDeploy, we'd need to parse the date string
-        // For now, just sort by name as fallback
-        return a.name.localeCompare(b.name);
+        // Sort by lastDeploy timestamp (most recent first)
+        // null values go to the end
+        if (a.lastDeploy === null && b.lastDeploy === null) return 0;
+        if (a.lastDeploy === null) return 1;
+        if (b.lastDeploy === null) return -1;
+        return b.lastDeploy - a.lastDeploy; // Descending order (newest first)
       }
     });
 
@@ -671,6 +714,7 @@ export default function DashboardPage({ onManage, onStartDeploy }: DashboardPage
               onManage={onManage}
               onDelete={handleDeleteService}
               copy={t.serviceCard}
+              formatTime={formatTime}
             />
           ))
         ) : (
