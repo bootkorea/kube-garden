@@ -19,7 +19,7 @@ interface Service {
 
 interface ServiceCardProps {
   service: Service;
-  onManage: () => void;
+  onManage: (serviceInfo: { serviceName: string; githubRepo?: string; strategy?: string }) => void;
   onDelete: (id: string) => void;
   copy: {
     version: string;
@@ -79,7 +79,11 @@ const ServiceCard = ({ service, onManage, onDelete, copy }: ServiceCardProps) =>
         </div>
       </div>
       <button
-        onClick={onManage}
+        onClick={() => onManage({
+          serviceName: service.name,
+          githubRepo: service.githubRepo,
+          strategy: 'canary', // Default strategy, can be enhanced later
+        })}
         className="mt-6 flex w-full items-center justify-center gap-2 rounded-xl bg-slate-900 py-3 text-sm font-bold text-white transition-all hover:bg-green-600 hover:shadow-lg hover:shadow-green-200"
       >
         {copy.manage} <ArrowRight size={16} />
@@ -89,7 +93,7 @@ const ServiceCard = ({ service, onManage, onDelete, copy }: ServiceCardProps) =>
 };
 
 interface DashboardPageProps {
-  onManage: () => void;
+  onManage: (serviceInfo: { serviceName: string; githubRepo?: string; strategy?: string }) => void;
   onStartDeploy: () => void;
 }
 
@@ -437,7 +441,11 @@ export default function DashboardPage({ onManage, onStartDeploy }: DashboardPage
                   top: `${service.position.y}%`,
                   transform: 'translate(-50%, -50%)',
                 }}
-                onClick={() => onManage()}
+                onClick={() => onManage({
+                  serviceName: service.name,
+                  githubRepo: service.githubRepo,
+                  strategy: 'canary', // Default strategy, can be enhanced later
+                })}
               >
                 <div className="relative">
                   <div className={`rounded-full p-3 shadow-lg transition-all ${isHealthy
@@ -523,7 +531,11 @@ export default function DashboardPage({ onManage, onStartDeploy }: DashboardPage
                       className={`p-3 rounded-lg border transition-all hover:shadow-md cursor-pointer ${
                         isHealthy ? 'bg-green-50 border-green-200' : 'bg-amber-50 border-amber-200'
                       }`}
-                      onClick={() => onManage()}
+                      onClick={() => onManage({
+                        serviceName: service.name,
+                        githubRepo: service.githubRepo,
+                        strategy: 'canary', // Default strategy, can be enhanced later
+                      })}
                     >
                       <div className="flex items-center gap-2">
                         <div className={`rounded-full p-1.5 ${isHealthy ? 'bg-green-100 text-green-600' : 'bg-amber-100 text-amber-600'}`}>

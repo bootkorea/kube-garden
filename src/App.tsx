@@ -17,9 +17,16 @@ interface DeploymentConfig {
   environment?: string; // Optional, can be set to default
 }
 
+interface ServiceInfo {
+  serviceName: string;
+  githubRepo?: string;
+  strategy?: string;
+}
+
 function App() {
   const [currentPage, setCurrentPage] = useState<PageType>('login');
   const [deploymentConfig, setDeploymentConfig] = useState<DeploymentConfig | null>(null);
+  const [isRedeploy, setIsRedeploy] = useState(false);
 
   // Login page occupies the full viewport independently
   if (currentPage === 'login') {
@@ -31,8 +38,51 @@ function App() {
     setCurrentPage('deploy');
   };
 
+  const handleRedeploy = async (serviceInfo: ServiceInfo) => {
+    // Fetch full service information from API if needed
+    const API_URL = import.meta.env.VITE_API_URL;
+    const USE_MOCK = !API_URL || API_URL === 'mock';
+    
+    let githubRepo = serviceInfo.githubRepo || '';
+    let strategy = serviceInfo.strategy || 'canary';
+    
+    // If we don't have githubRepo, try to fetch from API
+    if (!githubRepo && !USE_MOCK) {
+      try {
+        const response = await fetch(`${API_URL}/services`);
+        if (response.ok) {
+          const data = await response.json();
+          const servicesList = Array.isArray(data) ? data : (data.services || []);
+          const service = servicesList.find((s: any) => s.name === serviceInfo.serviceName);
+          if (service) {
+            githubRepo = service.gitUrl || service.githubRepo || '';
+            // Strategy can be inferred from criticality if needed
+            if (service.criticality === 'low') strategy = 'rolling';
+            else if (service.criticality === 'high') strategy = 'blue-green';
+            else strategy = 'canary';
+          }
+        }
+      } catch (error) {
+        console.error('Failed to fetch service info:', error);
+      }
+    }
+    
+    // Create deployment config for redeploy
+    const config: DeploymentConfig = {
+      serviceName: serviceInfo.serviceName,
+      githubRepo: githubRepo || `https://github.com/user/${serviceInfo.serviceName}`, // Fallback
+      strategy: strategy,
+      description: 'Redeployment', // Default description for redeploy
+    };
+    
+    setDeploymentConfig(config);
+    setIsRedeploy(true);
+    setCurrentPage('deploy');
+  };
+
   const handleBackFromDeploy = () => {
     setDeploymentConfig(null);
+    setIsRedeploy(false);
     setCurrentPage('dashboard');
   };
 
@@ -55,7 +105,7 @@ function App() {
           <div className="h-full w-full overflow-y-auto">
             {currentPage === 'dashboard' && (
               <DashboardPage
-                onManage={() => setCurrentPage('deploy')}
+                onManage={handleRedeploy}
                 onStartDeploy={() => setCurrentPage('launch')}
               />
             )}
@@ -76,6 +126,7 @@ function App() {
             <DeploymentConsole
               onBack={handleBackFromDeploy}
               deploymentConfig={deploymentConfig}
+              isRedeploy={isRedeploy}
             />
           </div>
         )}

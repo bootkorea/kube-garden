@@ -112,13 +112,14 @@ interface DeploymentConsoleProps {
     description: string;
     environment?: string; // Optional
   } | null;
+  isRedeploy?: boolean; // Whether this is a redeployment
 }
 
-export default function DeploymentConsole({ onBack, deploymentConfig }: DeploymentConsoleProps) {
+export default function DeploymentConsole({ onBack, deploymentConfig, isRedeploy = false }: DeploymentConsoleProps) {
   const { language } = useLanguage();
   const copy = {
     en: {
-      headerPrefix: 'Deploying:',
+      headerPrefix: isRedeploy ? 'Redeploying:' : 'Deploying:',
       environment: 'Production Environment',
       strategyLabel: 'Strategy',
       strategyOptions: {
@@ -137,7 +138,7 @@ export default function DeploymentConsole({ onBack, deploymentConfig }: Deployme
         canary: 'Canary 10%',
       },
       buttons: {
-        deploy: 'Deploy with Gardener Agent',
+        deploy: isRedeploy ? 'Redeploy with Gardener Agent' : 'Deploy with Gardener Agent',
         processing: 'Processing...',
         ready: 'Deployment Ready',
         failed: 'Deployment Failed',
@@ -165,12 +166,14 @@ export default function DeploymentConsole({ onBack, deploymentConfig }: Deployme
         rollbackStart: 'Rolling back to previous version...',
         rollbackDone: 'Rollback Complete.',
       },
-      logReady: "Gardener Agent: Ready to deploy. Click 'Deploy with Gardener Agent' to start.",
+      logReady: isRedeploy 
+        ? "Gardener Agent: Ready to redeploy. Click 'Redeploy with Gardener Agent' to start."
+        : "Gardener Agent: Ready to deploy. Click 'Deploy with Gardener Agent' to start.",
       userLabel: 'You',
       agentLabel: 'Gardener Agent',
     },
     ja: {
-      headerPrefix: 'デプロイ中:',
+      headerPrefix: isRedeploy ? '再デプロイ中:' : 'デプロイ中:',
       environment: '本番環境',
       strategyLabel: '戦略',
       strategyOptions: {
@@ -189,7 +192,7 @@ export default function DeploymentConsole({ onBack, deploymentConfig }: Deployme
         canary: 'カナリア 10%',
       },
       buttons: {
-        deploy: 'エージェントとデプロイ',
+        deploy: isRedeploy ? 'ガーデナーエージェントで再デプロイ' : 'エージェントとデプロイ',
         processing: '処理中...',
         ready: 'デプロイ完了',
         failed: 'デプロイ失敗',
@@ -217,7 +220,9 @@ export default function DeploymentConsole({ onBack, deploymentConfig }: Deployme
         rollbackStart: '前のバージョンへロールバックしています...',
         rollbackDone: 'ロールバック完了。',
       },
-      logReady: "ガーデナーエージェント: デプロイ準備完了です。「エージェントとデプロイ」をクリックしてください。",
+      logReady: isRedeploy 
+        ? "ガーデナーエージェント: 再デプロイ準備完了です。「ガーデナーエージェントで再デプロイ」をクリックしてください。"
+        : "ガーデナーエージェント: デプロイ準備完了です。「エージェントとデプロイ」をクリックしてください。",
       userLabel: 'あなた',
       agentLabel: 'ガーデナーエージェント',
     },
