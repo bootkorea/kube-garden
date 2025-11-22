@@ -287,6 +287,9 @@ export default function DeploymentConsole({ onBack, deploymentConfig, isRedeploy
 
         const criticality = strategyToCriticality(deploymentConfig.strategy);
 
+        // Get githubToken from localStorage
+        const githubToken = localStorage.getItem('githubToken') || '';
+
         const createResponse = await fetch(`${API_URL}/services`, {
           method: 'POST',
           headers: {
@@ -298,6 +301,7 @@ export default function DeploymentConsole({ onBack, deploymentConfig, isRedeploy
             gitBranch: 'main',
             namespace: 'default',
             criticality: criticality,
+            githubToken: githubToken,
           }),
         });
 

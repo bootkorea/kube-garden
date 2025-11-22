@@ -1,3 +1,4 @@
+import { useState } from 'react';
 import { KeyRound, ArrowRight } from 'lucide-react';
 import { useLanguage } from '../components/LanguageContext';
 
@@ -7,6 +8,7 @@ interface LoginPageProps {
 
 export default function LoginPage({ onLogin }: LoginPageProps) {
   const { language } = useLanguage();
+  const [accessToken, setAccessToken] = useState('');
   const copy = {
     en: {
       tagline: 'Enter your access token to manage your digital garden.',
@@ -24,6 +26,13 @@ export default function LoginPage({ onLogin }: LoginPageProps) {
     },
   } as const;
   const t = copy[language];
+
+  const handleLogin = () => {
+    if (accessToken.trim()) {
+      localStorage.setItem('githubToken', accessToken.trim());
+      onLogin();
+    }
+  };
 
   return (
     // Force the layout to occupy the full viewport
@@ -43,12 +52,19 @@ export default function LoginPage({ onLogin }: LoginPageProps) {
             <input 
               type="password" 
               placeholder={t.placeholder}
+              value={accessToken}
+              onChange={(e) => setAccessToken(e.target.value)}
+              onKeyDown={(e) => {
+                if (e.key === 'Enter') {
+                  handleLogin();
+                }
+              }}
               className="w-full rounded-xl border border-slate-200 bg-slate-50 p-4 text-slate-800 focus:border-green-500 focus:outline-none transition-all"
             />
           </div>
           
           <button 
-            onClick={onLogin}
+            onClick={handleLogin}
             className="group flex w-full items-center justify-center gap-2 rounded-xl bg-slate-900 py-4 font-bold text-white transition-all hover:bg-green-600 hover:shadow-lg hover:shadow-green-200"
           >
             {t.button} <ArrowRight size={20} className="transition-transform group-hover:translate-x-1" />
