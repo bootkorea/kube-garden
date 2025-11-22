@@ -27,7 +27,7 @@ export default function NewDeploymentPage({ onStartDeploy, onBack }: NewDeployme
         en: {
             back: 'Back to Dashboard',
             title: 'Start New Deployment',
-            subtitle: 'Configure your deployment settings. The AI agent will generate a deployment plan for review.',
+            subtitle: 'Configure your deployment settings. The Gardener Agent will generate a deployment plan for review.',
             labels: {
                 serviceName: 'Service Name *',
                 repo: 'GitHub Repository URL *',
@@ -48,12 +48,12 @@ export default function NewDeploymentPage({ onStartDeploy, onBack }: NewDeployme
             submit: 'Start Deployment',
             submitting: 'Starting Deployment...',
             cancel: 'Cancel',
-            info: 'ℹ️ How it works: After submitting, the AI agent will generate a deployment plan, trigger GitHub Actions to build your image, and guide you through the deployment process with real-time monitoring.',
+            info: 'ℹ️ How it works: After submitting, the Gardener Agent will generate a deployment plan, trigger GitHub Actions to build your image, and guide you through the deployment process with real-time monitoring.',
         },
         ja: {
             back: 'ダッシュボードへ戻る',
             title: '新しいデプロイを開始',
-            subtitle: 'デプロイ設定を入力すると、AI エージェントが計画を生成してくれます。',
+            subtitle: 'デプロイ設定を入力すると、ガーデナーエージェントが計画を生成してくれます。',
             labels: {
                 serviceName: 'サービス名 *',
                 repo: 'GitHub リポジトリ URL *',
@@ -74,7 +74,7 @@ export default function NewDeploymentPage({ onStartDeploy, onBack }: NewDeployme
             submit: 'デプロイを開始',
             submitting: 'デプロイを開始しています...',
             cancel: 'キャンセル',
-            info: 'ℹ️ 仕組み: 送信後、AI エージェントがデプロイ計画を作成し、GitHub Actions を実行してイメージをビルド、リアルタイムで進行を案内します。',
+            info: 'ℹ️ 仕組み: 送信後、ガーデナーエージェントがデプロイ計画を作成し、GitHub Actions を実行してイメージをビルド、リアルタイムで進行を案内します。',
         },
     } as const;
     const t = copy[language];

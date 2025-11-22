@@ -1,4 +1,4 @@
-import { Volume2, VolumeX, Bot, Languages } from 'lucide-react';
+import { Volume2, VolumeX, Languages } from 'lucide-react';
 import { useAudio } from '../components/AudioContext';
 import { useLanguage } from '../components/LanguageContext';
 
@@ -21,7 +21,7 @@ export default function SettingsPage() {
         description: 'Play relaxing background music during deployment.',
       },
       ai: {
-        title: 'AI Agent Personality',
+        title: 'Gardener Agent Personality',
         description: 'Adjust how the agent communicates with you.',
         options: ['Helpful Gardener (Friendly)', 'Strict Operator (Concise)', 'Pirate Captain (Fun)'],
       },
@@ -41,7 +41,7 @@ export default function SettingsPage() {
         description: 'デプロイ中に流れるリラックスできる音楽を切り替えます。',
       },
       ai: {
-        title: 'AIエージェントの性格',
+        title: 'ガーデナーエージェントの性格',
         description: 'エージェントの話し方を選択します。',
         options: ['親切な庭師（フレンドリー）', '厳格なオペレーター（簡潔）', '海賊キャプテン（おちゃめ）'],
       },
@@ -52,7 +52,7 @@ export default function SettingsPage() {
   return (
     <div className="h-full overflow-y-auto bg-stone-50 p-8">
       <header className="mb-8">
-        <h2 className="text-2xl font-bold text-slate-800">{t.title}</h2>
+        <h2 className="text-2xl font-bold text-slate-800 font-logo">{t.title}</h2>
         <p className="text-slate-500">{t.subtitle}</p>
       </header>
 
@@ -103,6 +103,7 @@ export default function SettingsPage() {
         </div>
 
         {/* AI Persona Setting */}
+        {/* TODO: Implement AI agent personality selection
         <div className="flex items-center justify-between rounded-2xl border border-slate-200 bg-white p-6 shadow-sm">
           <div className="flex items-center gap-4">
             <div className="rounded-full bg-blue-50 p-3 text-blue-600">
@@ -119,6 +120,7 @@ export default function SettingsPage() {
             ))}
           </select>
         </div>
+        */}
       </div>
     </div>
   );
