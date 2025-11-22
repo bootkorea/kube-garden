@@ -252,7 +252,7 @@ export default function DeploymentConsole({ onBack, deploymentConfig, isRedeploy
 
     setStatus('planning');
     const version = 'latest'; // Default to latest since version control is removed
-    setLogs(prev => [...prev, `User: Deploying ${deploymentConfig.serviceName}:${version} with ${deploymentConfig.strategy} strategy.`, "Gardener Agent: Analyzing... Generating deployment plan."]);
+    setLogs(prev => [...prev, `User: Deploying ${deploymentConfig.serviceName}:${version} with canary strategy.`, "Gardener Agent: Analyzing... Generating deployment plan."]);
 
     try {
       // Step 1: Check if service exists, if not create it
@@ -273,19 +273,8 @@ export default function DeploymentConsole({ onBack, deploymentConfig, isRedeploy
         // Create the service
         setLogs(prev => [...prev, "Gardener Agent: Service not found. Creating new service..."]);
 
-        // Map strategy to criticality
-        // rolling -> low (rolling-update)
-        // canary -> medium (canary)
-        // blue-green -> high (bluegreen)
-        const strategyToCriticality = (strategy: string): 'low' | 'medium' | 'high' => {
-          const normalizedStrategy = strategy.toLowerCase().trim();
-          if (normalizedStrategy === 'rolling') return 'low';
-          if (normalizedStrategy === 'canary') return 'medium';
-          if (normalizedStrategy === 'blue-green' || normalizedStrategy === 'bluegreen') return 'high';
-          return 'medium'; // default fallback
-        };
-
-        const criticality = strategyToCriticality(deploymentConfig.strategy);
+        // Always use canary strategy (medium criticality)
+        const criticality: 'medium' = 'medium';
 
         // Get githubToken from localStorage
         const githubToken = localStorage.getItem('githubToken') || '';

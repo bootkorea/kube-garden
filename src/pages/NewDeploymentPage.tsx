@@ -140,21 +140,6 @@ export default function NewDeploymentPage({ onStartDeploy, onBack }: NewDeployme
 
                         <div>
                             <label className="block text-sm font-bold text-slate-700 mb-2">
-                                {t.labels.strategy}
-                            </label>
-                            <select
-                                value={formData.strategy}
-                                onChange={(e) => setFormData({ ...formData, strategy: e.target.value })}
-                                className="w-full rounded-xl border border-slate-200 bg-slate-50 p-4 text-slate-700 focus:border-green-500 focus:outline-none transition-all"
-                            >
-                                <option value="canary">{t.strategies.canary}</option>
-                                <option value="blue-green">{t.strategies.blueGreen}</option>
-                                <option value="rolling">{t.strategies.rolling}</option>
-                            </select>
-                        </div>
-
-                        <div>
-                            <label className="block text-sm font-bold text-slate-700 mb-2">
                                 {t.labels.description}
                             </label>
                             <textarea
