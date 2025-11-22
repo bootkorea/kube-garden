@@ -133,7 +133,7 @@ export default function DashboardPage({ onManage, onStartDeploy }: DashboardPage
       serviceCard: {
         version: 'Version',
         lastWatered: 'Last Watered',
-        manage: 'Manage Garden',
+        manage: 'Manage Deployment',
         deleteTitle: 'Delete service',
         healthy: 'HEALTHY',
         warning: 'WARNING',
@@ -166,7 +166,7 @@ export default function DashboardPage({ onManage, onStartDeploy }: DashboardPage
       serviceCard: {
         version: 'Version',
         lastWatered: 'Last Watered',
-        manage: '庭を管理',
+        manage: 'デプロイ管理',
         deleteTitle: 'サービスを削除',
         healthy: '正常',
         warning: '注意',
