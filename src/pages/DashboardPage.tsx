@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react';
-import { Leaf, AlertCircle, ArrowRight, Sprout, Trash2, Filter, ArrowUpDown } from 'lucide-react';
+import { Leaf, AlertCircle, ArrowRight, Sprout, Trash2, Filter, ArrowUpDown, Flower2 } from 'lucide-react';
 import { useLanguage } from '../components/LanguageContext';
 
 // --- Type definitions & mock data ---
@@ -112,7 +112,7 @@ export default function DashboardPage({ onManage, onStartDeploy }: DashboardPage
       gardenAlt: 'Digital Garden',
       confirmDelete: 'Are you sure you want to delete this service?',
       deleteErrorPrefix: 'Error deleting service:',
-      healthCheck: '🥕 Garden Health Check',
+      healthCheck: 'Garden Health Check',
       healthLabels: {
         healthy: 'Healthy',
         warning: 'Warning',
@@ -479,7 +479,12 @@ export default function DashboardPage({ onManage, onStartDeploy }: DashboardPage
 
         {/* Garden Health Check Panel */}
         <div className="lg:w-80 flex-shrink-0 rounded-2xl border-2 border-slate-200 bg-white p-6 shadow-lg flex flex-col" style={{ aspectRatio: '16/8', maxHeight: '100%' }}>
-          <h2 className="text-xl font-bold text-slate-800 mb-6 font-logo">{t.healthCheck}</h2>
+          <div className="flex items-center justify-between mb-6">
+            <h2 className="text-xl font-bold text-slate-800 font-logo">{t.healthCheck}</h2>
+            <div className="text-green-500">
+              <Flower2 size={24} className="animate-pulse" />
+            </div>
+          </div>
           <div className="flex items-center justify-center gap-4 mb-6 flex-shrink-0">
             {/* Healthy */}
             <button
