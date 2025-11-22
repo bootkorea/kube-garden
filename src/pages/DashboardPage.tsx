@@ -137,11 +137,11 @@ export default function DashboardPage({ onManage, onStartDeploy }: DashboardPage
       title: '私のデジタルガーデン 🌿',
       subtitle: 'Kubernetes デプロイを安心して管理しましょう。',
       mock: '⚠️ モックモードで動作中',
-      startButton: '+ New Deployment  🌱',
+      startButton: '+ 新規デプロイ 🌱',
       gardenAlt: 'デジタルガーデン',
       confirmDelete: 'このサービスを削除しますか？',
       deleteErrorPrefix: 'サービス削除エラー:',
-      healthCheck: 'ガーデンヘルスチェック',
+      healthCheck: '🥕 ガーデンヘルスチェック',
       healthLabels: {
         healthy: '正常',
         warning: '注意',
