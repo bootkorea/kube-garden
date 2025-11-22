@@ -14,8 +14,8 @@ type LogMeta = {
 };
 
 const parseLogEntry = (entry: string): LogMeta => {
-  if (entry.startsWith('AI Agent:')) {
-    return { role: 'agent', text: entry.replace('AI Agent:', '').trim() };
+  if (entry.startsWith('Gardener Agent:')) {
+    return { role: 'agent', text: entry.replace('Gardener Agent:', '').trim() };
   }
   if (entry.startsWith('User:')) {
     return { role: 'user', text: entry.replace('User:', '').trim() };
@@ -137,7 +137,7 @@ export default function DeploymentConsole({ onBack, deploymentConfig }: Deployme
         canary: 'Canary 10%',
       },
       buttons: {
-        deploy: 'Deploy with Agent',
+        deploy: 'Deploy with Gardener Agent',
         processing: 'Processing...',
         ready: 'Deployment Ready',
         failed: 'Deployment Failed',
@@ -165,9 +165,9 @@ export default function DeploymentConsole({ onBack, deploymentConfig }: Deployme
         rollbackStart: 'Rolling back to previous version...',
         rollbackDone: 'Rollback Complete.',
       },
-      logReady: "AI Agent: Ready to deploy. Click 'Deploy with Agent' to start.",
+      logReady: "Gardener Agent: Ready to deploy. Click 'Deploy with Gardener Agent' to start.",
       userLabel: 'You',
-      agentLabel: 'AI Agent',
+      agentLabel: 'Gardener Agent',
     },
     ja: {
       headerPrefix: 'デプロイ中:',
@@ -217,9 +217,9 @@ export default function DeploymentConsole({ onBack, deploymentConfig }: Deployme
         rollbackStart: '前のバージョンへロールバックしています...',
         rollbackDone: 'ロールバック完了。',
       },
-      logReady: "AI エージェント: デプロイ準備完了です。「エージェントとデプロイ」をクリックしてください。",
+      logReady: "ガーデナーエージェント: デプロイ準備完了です。「エージェントとデプロイ」をクリックしてください。",
       userLabel: 'あなた',
-      agentLabel: 'AI エージェント',
+      agentLabel: 'ガーデナーエージェント',
     },
   } as const;
   const t = copy[language];
@@ -245,11 +245,11 @@ export default function DeploymentConsole({ onBack, deploymentConfig }: Deployme
 
     setStatus('planning');
     const version = 'latest'; // Default to latest since version control is removed
-    setLogs(prev => [...prev, `User: Deploying ${deploymentConfig.serviceName}:${version} with ${deploymentConfig.strategy} strategy.`, "AI Agent: Analyzing... Generating deployment plan."]);
+    setLogs(prev => [...prev, `User: Deploying ${deploymentConfig.serviceName}:${version} with ${deploymentConfig.strategy} strategy.`, "Gardener Agent: Analyzing... Generating deployment plan."]);
 
     try {
       // Step 1: Check if service exists, if not create it
-      setLogs(prev => [...prev, "AI Agent: Checking if service exists..."]);
+      setLogs(prev => [...prev, "Gardener Agent: Checking if service exists..."]);
 
       const servicesResponse = await fetch(`${API_URL}/services`);
       if (!servicesResponse.ok) {
@@ -264,7 +264,7 @@ export default function DeploymentConsole({ onBack, deploymentConfig }: Deployme
 
       if (!service) {
         // Create the service
-        setLogs(prev => [...prev, "AI Agent: Service not found. Creating new service..."]);
+        setLogs(prev => [...prev, "Gardener Agent: Service not found. Creating new service..."]);
 
         const createResponse = await fetch(`${API_URL}/services`, {
           method: 'POST',
@@ -288,13 +288,13 @@ export default function DeploymentConsole({ onBack, deploymentConfig }: Deployme
 
         const createData = await createResponse.json();
         service = createData.service;
-        setLogs(prev => [...prev, `AI Agent: Service created successfully with ID: ${service.id}`]);
+        setLogs(prev => [...prev, `Gardener Agent: Service created successfully with ID: ${service.id}`]);
       } else {
-        setLogs(prev => [...prev, `AI Agent: Service found with ID: ${service.id}`]);
+        setLogs(prev => [...prev, `Gardener Agent: Service found with ID: ${service.id}`]);
       }
 
       // Step 2: Start deployment with serviceId
-      setLogs(prev => [...prev, "AI Agent: Starting deployment..."]);
+      setLogs(prev => [...prev, "Gardener Agent: Starting deployment..."]);
 
       const response = await fetch(`${API_URL}/deploy`, {
         method: 'POST',
@@ -318,7 +318,7 @@ export default function DeploymentConsole({ onBack, deploymentConfig }: Deployme
       const deploymentId = data.deployment?.id || data.deploymentId || data.id;
       setDeploymentId(deploymentId);
 
-      setLogs(prev => [...prev, "AI Agent: Plan approved. Starting pipeline...", "Running Tests & Lint..."]);
+      setLogs(prev => [...prev, "Gardener Agent: Plan approved. Starting pipeline...", "Running Tests & Lint..."]);
       toast.success(t.toast.planCreated, { id: 'deploy-toast' });
       setStatus('running');
 
@@ -386,7 +386,7 @@ export default function DeploymentConsole({ onBack, deploymentConfig }: Deployme
             // Simulate deployment completion after 3 seconds
             await sleep(3000);
             setStatus('success');
-            setLogs(prev => [...prev, "AI Agent: Deployment successful! Canary is live."]);
+            setLogs(prev => [...prev, "Gardener Agent: Deployment successful! Canary is live."]);
             toast.success(t.toast.canaryLive, { id: 'deploy-toast' });
 
             await sleep(1000);
@@ -400,7 +400,7 @@ export default function DeploymentConsole({ onBack, deploymentConfig }: Deployme
             return; // Stop polling
           } else if (effectiveStatus === 'DEPLOYED_TO_EKS' || effectiveStatus === 'SUCCESS' || effectiveStatus === 'IMAGE_VALIDATED') {
             setStatus('success');
-            setLogs(prev => [...prev, "AI Agent: Deployment successful! Canary is live."]);
+            setLogs(prev => [...prev, "Gardener Agent: Deployment successful! Canary is live."]);
             toast.success(t.toast.canaryLive, { id: 'deploy-toast' });
 
             await sleep(1000);
@@ -432,7 +432,7 @@ export default function DeploymentConsole({ onBack, deploymentConfig }: Deployme
   };
 
   const handlePromote = async () => {
-    setLogs(prev => [...prev, "User: Confirmed. Promoting to 100%.", "AI Agent: Traffic split updated (100% New). Deployment Finalized. 🚀"]);
+    setLogs(prev => [...prev, "User: Confirmed. Promoting to 100%.", "Gardener Agent: Traffic split updated (100% New). Deployment Finalized. 🚀"]);
 
     await sleep(1000);
 
@@ -451,7 +451,7 @@ export default function DeploymentConsole({ onBack, deploymentConfig }: Deployme
   };
 
   const handleRollback = async () => {
-    setLogs(prev => [...prev, "User: Rollback requested.", "AI Agent: Reverting traffic to stable version... Done."]);
+    setLogs(prev => [...prev, "User: Rollback requested.", "Gardener Agent: Reverting traffic to stable version... Done."]);
     toast.error(t.toast.rollbackStart);
 
     await sleep(1500);

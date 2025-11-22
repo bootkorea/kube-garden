@@ -21,7 +21,7 @@ export default function SettingsPage() {
         description: 'Play relaxing background music during deployment.',
       },
       ai: {
-        title: 'AI Agent Personality',
+        title: 'Gardener Agent Personality',
         description: 'Adjust how the agent communicates with you.',
         options: ['Helpful Gardener (Friendly)', 'Strict Operator (Concise)', 'Pirate Captain (Fun)'],
       },
@@ -41,7 +41,7 @@ export default function SettingsPage() {
         description: 'デプロイ中に流れるリラックスできる音楽を切り替えます。',
       },
       ai: {
-        title: 'AIエージェントの性格',
+        title: 'ガーデナーエージェントの性格',
         description: 'エージェントの話し方を選択します。',
         options: ['親切な庭師（フレンドリー）', '厳格なオペレーター（簡潔）', '海賊キャプテン（おちゃめ）'],
       },
