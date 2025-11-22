@@ -1,5 +1,6 @@
 import { useState } from 'react';
 import { ArrowLeft, Loader2, Rocket } from 'lucide-react';
+import { useLanguage } from '../components/LanguageContext';
 
 interface NewDeploymentPageProps {
     onStartDeploy: (config: DeploymentConfig) => void;
@@ -21,6 +22,62 @@ export default function NewDeploymentPage({ onStartDeploy, onBack }: NewDeployme
         description: '',
     });
     const [loading, setLoading] = useState(false);
+    const { language } = useLanguage();
+    const copy = {
+        en: {
+            back: 'Back to Dashboard',
+            title: 'Start New Deployment',
+            subtitle: 'Configure your deployment settings. The AI agent will generate a deployment plan for review.',
+            labels: {
+                serviceName: 'Service Name *',
+                repo: 'GitHub Repository URL *',
+                strategy: 'Deployment Strategy *',
+                description: 'Description',
+            },
+            placeholders: {
+                service: 'e.g., demo-api',
+                repo: 'e.g., https://github.com/username/repo',
+                description: 'Describe the changes in this deployment...',
+            },
+            helper: 'This will trigger a GitHub Actions workflow to build and push your Docker image.',
+            strategies: {
+                canary: 'Canary Deployment (Recommended)',
+                blueGreen: 'Blue-Green Deployment',
+                rolling: 'Rolling Update',
+            },
+            submit: 'Start Deployment',
+            submitting: 'Starting Deployment...',
+            cancel: 'Cancel',
+            info: 'ℹ️ How it works: After submitting, the AI agent will generate a deployment plan, trigger GitHub Actions to build your image, and guide you through the deployment process with real-time monitoring.',
+        },
+        ja: {
+            back: 'ダッシュボードへ戻る',
+            title: '新しいデプロイを開始',
+            subtitle: 'デプロイ設定を入力すると、AI エージェントが計画を生成してくれます。',
+            labels: {
+                serviceName: 'サービス名 *',
+                repo: 'GitHub リポジトリ URL *',
+                strategy: 'デプロイ戦略 *',
+                description: '変更内容',
+            },
+            placeholders: {
+                service: '例: demo-api',
+                repo: '例: https://github.com/username/repo',
+                description: 'このデプロイでの変更点を記入してください...',
+            },
+            helper: 'GitHub Actions を起動して Docker イメージをビルドし、プッシュします。',
+            strategies: {
+                canary: 'カナリアデプロイ（推奨）',
+                blueGreen: 'ブルーグリーンデプロイ',
+                rolling: 'ローリングアップデート',
+            },
+            submit: 'デプロイを開始',
+            submitting: 'デプロイを開始しています...',
+            cancel: 'キャンセル',
+            info: 'ℹ️ 仕組み: 送信後、AI エージェントがデプロイ計画を作成し、GitHub Actions を実行してイメージをビルド、リアルタイムで進行を案内します。',
+        },
+    } as const;
+    const t = copy[language];
 
 
     const handleSubmit = async (e: React.FormEvent) => {
@@ -42,17 +99,17 @@ export default function NewDeploymentPage({ onStartDeploy, onBack }: NewDeployme
                     onClick={onBack}
                     className="mb-6 flex items-center gap-2 text-sm font-bold text-slate-500 hover:text-slate-800 transition-colors"
                 >
-                    <ArrowLeft size={16} /> Back to Dashboard
+                    <ArrowLeft size={16} /> {t.back}
                 </button>
 
                 <div className="rounded-2xl border border-slate-200 bg-white p-8 shadow-sm">
-                    <h2 className="text-2xl font-bold text-slate-800 mb-2">Start New Deployment</h2>
-                    <p className="text-slate-500 mb-8">Configure your deployment settings. The AI agent will generate a deployment plan for review.</p>
+                    <h2 className="text-2xl font-bold text-slate-800 mb-2">{t.title}</h2>
+                    <p className="text-slate-500 mb-8">{t.subtitle}</p>
 
                     <form onSubmit={handleSubmit} className="space-y-6">
                         <div>
                             <label className="block text-sm font-bold text-slate-700 mb-2">
-                                Service Name *
+                                {t.labels.serviceName}
                             </label>
                             <input
                                 type="text"
@@ -60,13 +117,13 @@ export default function NewDeploymentPage({ onStartDeploy, onBack }: NewDeployme
                                 value={formData.serviceName}
                                 onChange={(e) => setFormData({ ...formData, serviceName: e.target.value })}
                                 className="w-full rounded-xl border border-slate-200 bg-slate-50 p-4 text-slate-700 focus:border-green-500 focus:outline-none transition-all"
-                                placeholder="e.g., demo-api"
+                                placeholder={t.placeholders.service}
                             />
                         </div>
 
                         <div>
                             <label className="block text-sm font-bold text-slate-700 mb-2">
-                                GitHub Repository URL *
+                                {t.labels.repo}
                             </label>
                             <input
                                 type="text"
@@ -74,37 +131,37 @@ export default function NewDeploymentPage({ onStartDeploy, onBack }: NewDeployme
                                 value={formData.githubRepo}
                                 onChange={(e) => setFormData({ ...formData, githubRepo: e.target.value })}
                                 className="w-full rounded-xl border border-slate-200 bg-slate-50 p-4 text-slate-700 focus:border-green-500 focus:outline-none transition-all"
-                                placeholder="e.g., https://github.com/username/repo"
+                                placeholder={t.placeholders.repo}
                             />
                             <p className="mt-2 text-xs text-slate-500">
-                                This will trigger a GitHub Actions workflow to build and push your Docker image.
+                                {t.helper}
                             </p>
                         </div>
 
                         <div>
                             <label className="block text-sm font-bold text-slate-700 mb-2">
-                                Deployment Strategy *
+                                {t.labels.strategy}
                             </label>
                             <select
                                 value={formData.strategy}
                                 onChange={(e) => setFormData({ ...formData, strategy: e.target.value })}
                                 className="w-full rounded-xl border border-slate-200 bg-slate-50 p-4 text-slate-700 focus:border-green-500 focus:outline-none transition-all"
                             >
-                                <option value="canary">Canary Deployment (Recommended)</option>
-                                <option value="blue-green">Blue-Green Deployment</option>
-                                <option value="rolling">Rolling Update</option>
+                                <option value="canary">{t.strategies.canary}</option>
+                                <option value="blue-green">{t.strategies.blueGreen}</option>
+                                <option value="rolling">{t.strategies.rolling}</option>
                             </select>
                         </div>
 
                         <div>
                             <label className="block text-sm font-bold text-slate-700 mb-2">
-                                Description
+                                {t.labels.description}
                             </label>
                             <textarea
                                 value={formData.description}
                                 onChange={(e) => setFormData({ ...formData, description: e.target.value })}
                                 className="w-full rounded-xl border border-slate-200 bg-slate-50 p-4 text-slate-700 focus:border-green-500 focus:outline-none transition-all"
-                                placeholder="Describe the changes in this deployment..."
+                                placeholder={t.placeholders.description}
                                 rows={4}
                             />
                         </div>
@@ -120,12 +177,12 @@ export default function NewDeploymentPage({ onStartDeploy, onBack }: NewDeployme
                                 {loading ? (
                                     <>
                                         <Loader2 className="animate-spin" size={20} />
-                                        Starting Deployment...
+                                        {t.submitting}
                                     </>
                                 ) : (
                                     <>
                                         <Rocket size={20} />
-                                        Start Deployment
+                                        {t.submit}
                                     </>
                                 )}
                             </button>
@@ -135,14 +192,14 @@ export default function NewDeploymentPage({ onStartDeploy, onBack }: NewDeployme
                                 disabled={loading}
                                 className="rounded-xl border-2 border-slate-200 px-8 py-4 text-lg font-bold text-slate-600 hover:bg-slate-50 transition-colors disabled:opacity-50"
                             >
-                                Cancel
+                                {t.cancel}
                             </button>
                         </div>
                     </form>
                 </div>
 
                 <div className="mt-6 rounded-xl bg-blue-50 border border-blue-200 p-4 text-sm text-blue-800">
-                    <strong>ℹ️ How it works:</strong> After submitting, the AI agent will generate a deployment plan, trigger GitHub Actions to build your image, and guide you through the deployment process with real-time monitoring.
+                    {t.info}
                 </div>
             </div>
         </div>
