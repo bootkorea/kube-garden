@@ -108,7 +108,7 @@ export default function DashboardPage({ onManage, onStartDeploy }: DashboardPage
       gardenAlt: 'Digital Garden',
       confirmDelete: 'Are you sure you want to delete this service?',
       deleteErrorPrefix: 'Error deleting service:',
-      healthCheck: 'Garden Health Check',
+      healthCheck: '🥕 Garden Health Check',
       healthLabels: {
         healthy: 'Healthy',
         warning: 'Warning',
