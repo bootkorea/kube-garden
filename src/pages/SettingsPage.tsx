@@ -38,7 +38,7 @@ export default function SettingsPage() {
       },
       bgm: {
         title: 'BGM',
-        description: 'デプロイ中に流れるリラックスできる音楽を切り替えます。',
+        description: 'デプロイ中に流してる音楽をオン·オフします。',
       },
       ai: {
         title: 'ガーデナーエージェントの性格',
