@@ -101,7 +101,7 @@ export default function DashboardPage({ onManage, onStartDeploy }: DashboardPage
   const { language } = useLanguage();
   const copy = {
     en: {
-      title: 'My Digital Garden 🌿',
+      title: 'My Garden 🌿',
       subtitle: 'Manage your Kubernetes deployments with peace of mind.',
       mock: '⚠️ Running in MOCK mode',
       startButton: '🌱 Start Deployment',
@@ -328,7 +328,7 @@ export default function DashboardPage({ onManage, onStartDeploy }: DashboardPage
     <div className="min-h-full bg-stone-50 p-8">
       <header className="mb-8 flex flex-col gap-4 md:flex-row md:items-center md:justify-between">
         <div>
-          <h1 className="text-3xl font-bold text-slate-800">{t.title}</h1>
+          <h1 className="text-3xl font-bold text-slate-800 font-logo">{t.title}</h1>
           <p className="text-slate-500">{t.subtitle}</p>
           {USE_MOCK && <p className="text-xs text-amber-600 mt-2">{t.mock}</p>}
         </div>
@@ -398,7 +398,7 @@ export default function DashboardPage({ onManage, onStartDeploy }: DashboardPage
 
         {/* Garden Health Check Panel */}
         <div className="lg:w-80 flex-shrink-0 rounded-2xl border-2 border-slate-200 bg-white p-6 shadow-lg flex flex-col" style={{ aspectRatio: '16/8', maxHeight: '100%' }}>
-          <h2 className="text-xl font-bold text-slate-800 mb-6">{t.healthCheck}</h2>
+          <h2 className="text-xl font-bold text-slate-800 mb-6 font-logo">{t.healthCheck}</h2>
           <div className="flex items-center justify-center gap-4 mb-6 flex-shrink-0">
             {/* Healthy */}
             <button

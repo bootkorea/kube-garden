@@ -52,7 +52,7 @@ export default function SettingsPage() {
   return (
     <div className="h-full overflow-y-auto bg-stone-50 p-8">
       <header className="mb-8">
-        <h2 className="text-2xl font-bold text-slate-800">{t.title}</h2>
+        <h2 className="text-2xl font-bold text-slate-800 font-logo">{t.title}</h2>
         <p className="text-slate-500">{t.subtitle}</p>
       </header>
 
