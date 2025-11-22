@@ -343,19 +343,22 @@ export default function DashboardPage({ onManage, onStartDeploy }: DashboardPage
       {/* Garden Visualization with Health Check */}
       <div className="mb-10 flex flex-col lg:flex-row gap-6">
         {/* Garden Visualization */}
-        <div className="flex-1 relative rounded-3xl overflow-hidden shadow-xl" style={{ aspectRatio: '16/8' }}>
-          <img
-            src="/garden.png"
-            alt={t.gardenAlt}
-            className="w-full h-full object-cover"
-          />
+        <div className="flex-1 relative rounded-3xl shadow-xl overflow-visible" style={{ aspectRatio: '16/8' }}>
+          <div className="absolute inset-0 rounded-3xl overflow-hidden">
+            <img
+              src="/garden.png"
+              alt={t.gardenAlt}
+              className="w-full h-full object-cover"
+            />
+          </div>
           {/* Sprouts positioned on the garden */}
           {services.map((service) => {
             const isHealthy = service.status === 'healthy';
+            const showTooltipBelow = service.position.y < 30; // Show tooltip below if service is in top 30%
             return (
               <div
                 key={service.id}
-                className="absolute group cursor-pointer transition-all hover:scale-125"
+                className="absolute group cursor-pointer transition-all hover:scale-125 z-10"
                 style={{
                   left: `${service.position.x}%`,
                   top: `${service.position.y}%`,
@@ -371,14 +374,20 @@ export default function DashboardPage({ onManage, onStartDeploy }: DashboardPage
                     <Sprout size={32} strokeWidth={2} />
                   </div>
                   {/* Tooltip on hover */}
-                  <div className="absolute bottom-full left-1/2 transform -translate-x-1/2 mb-2 opacity-0 group-hover:opacity-100 transition-opacity pointer-events-none">
+                  <div className={`absolute left-1/2 transform -translate-x-1/2 opacity-0 group-hover:opacity-100 transition-opacity pointer-events-none z-20 ${
+                    showTooltipBelow ? 'top-full mt-2' : 'bottom-full mb-2'
+                  }`}>
                     <div className="bg-slate-900 text-white text-xs font-bold px-3 py-2 rounded-lg whitespace-nowrap shadow-lg">
                       {service.name}
                       <div className={`text-[10px] mt-1 ${isHealthy ? 'text-green-300' : 'text-amber-300'
                         }`}>
                         {isHealthy ? t.serviceCard.healthy : t.serviceCard.warning}
                       </div>
-                      <div className="absolute bottom-0 left-1/2 transform -translate-x-1/2 translate-y-full w-0 h-0 border-l-4 border-r-4 border-t-4 border-transparent border-t-slate-900"></div>
+                      <div className={`absolute left-1/2 transform -translate-x-1/2 w-0 h-0 ${
+                        showTooltipBelow 
+                          ? 'top-0 -translate-y-full border-l-4 border-r-4 border-b-4 border-transparent border-b-slate-900'
+                          : 'bottom-0 translate-y-full border-l-4 border-r-4 border-t-4 border-transparent border-t-slate-900'
+                      }`}></div>
                     </div>
                   </div>
                 </div>
