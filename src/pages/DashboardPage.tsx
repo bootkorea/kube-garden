@@ -205,6 +205,25 @@ export default function DashboardPage({ onManage, onStartDeploy }: DashboardPage
   const API_URL = import.meta.env.VITE_API_URL;
   const USE_MOCK = !API_URL || API_URL === 'mock';
 
+  // Helper function to generate consistent random position based on service ID
+  // Same ID will always get the same position
+  const getPositionFromId = (id: string): { x: number; y: number } => {
+    // Simple hash function to convert string ID to number
+    let hash = 0;
+    for (let i = 0; i < id.length; i++) {
+      const char = id.charCodeAt(i);
+      hash = ((hash << 5) - hash) + char;
+      hash = hash & hash; // Convert to 32bit integer
+    }
+    // Use hash to generate consistent pseudo-random values
+    const seed1 = Math.abs(hash);
+    const seed2 = Math.abs(hash * 31); // Different seed for y
+    return {
+      x: (seed1 % 8000) / 100 + 10, // 10-90%
+      y: (seed2 % 8000) / 100 + 10, // 10-90%
+    };
+  };
+
   useEffect(() => {
     fetchData();
   }, []);
@@ -213,8 +232,8 @@ export default function DashboardPage({ onManage, onStartDeploy }: DashboardPage
     if (USE_MOCK) {
       // Mock data fallback
       const mockServices = [
-        { id: '1', name: 'demo-api', status: 'healthy' as const, version: 'v1.0.2', pods: 3, lastDeploy: '2h ago', position: { x: 25, y: 50 } },
-        { id: '2', name: 'demo-frontend', status: 'warning' as const, version: 'v2.1.0', pods: 2, lastDeploy: '1d ago', position: { x: 75, y: 50 } },
+        { id: '1', name: 'demo-api', status: 'healthy' as const, version: 'v1.0.2', pods: 3, lastDeploy: '2h ago', position: getPositionFromId('1') },
+        { id: '2', name: 'demo-frontend', status: 'warning' as const, version: 'v2.1.0', pods: 2, lastDeploy: '1d ago', position: getPositionFromId('2') },
       ];
       setServices(mockServices);
       return;
@@ -226,17 +245,20 @@ export default function DashboardPage({ onManage, onStartDeploy }: DashboardPage
       if (servicesRes.ok) {
         const servicesData = await servicesRes.json();
         const list = Array.isArray(servicesData) ? servicesData : (servicesData.services || []);
-        const mappedServices = list.map((svc: any, idx: number) => ({
-          id: svc.id || String(idx),
-          name: svc.name || svc.serviceName || 'unknown',
-          status: 'healthy' as const,
-          version: 'latest',
-          pods: 3,
-          lastDeploy: 'N/A',
-          position: { x: 25 + idx * 50, y: 50 },
-          githubRepo: svc.githubRepo,
-          githubOwner: svc.githubOwner,
-        }));
+        const mappedServices = list.map((svc: any, idx: number) => {
+          const serviceId = svc.id || String(idx);
+          return {
+            id: serviceId,
+            name: svc.name || svc.serviceName || 'unknown',
+            status: 'healthy' as const,
+            version: 'latest',
+            pods: 3,
+            lastDeploy: 'N/A',
+            position: getPositionFromId(serviceId),
+            githubRepo: svc.githubRepo,
+            githubOwner: svc.githubOwner,
+          };
+        });
         setServices(mappedServices);
       }
 
