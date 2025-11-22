@@ -158,8 +158,8 @@ export default function DashboardPage({ onManage, onStartDeploy }: DashboardPage
         lastDeploy: '最終デプロイ',
       },
       serviceCard: {
-        version: 'バージョン',
-        lastWatered: '最終散水',
+        version: 'Version',
+        lastWatered: 'Last Watered',
         manage: '庭を管理',
         deleteTitle: 'サービスを削除',
         healthy: '正常',

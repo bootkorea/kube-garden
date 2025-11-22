@@ -174,8 +174,8 @@ export default function DeploymentConsole({ onBack, deploymentConfig }: Deployme
       environment: '本番環境',
       strategyLabel: '戦略',
       strategyOptions: {
-        canary: 'カナリアデプロイ（推奨）',
-        blue: 'ブルーグリーンデプロイ',
+        canary: 'Canary Deployment（推奨）',
+        blue: 'Blue-Green Deployment',
       },
       plant: {
         idle: '成長の準備完了',
@@ -266,6 +266,20 @@ export default function DeploymentConsole({ onBack, deploymentConfig }: Deployme
         // Create the service
         setLogs(prev => [...prev, "Gardener Agent: Service not found. Creating new service..."]);
 
+        // Map strategy to criticality
+        // rolling -> low (rolling-update)
+        // canary -> medium (canary)
+        // blue-green -> high (bluegreen)
+        const strategyToCriticality = (strategy: string): 'low' | 'medium' | 'high' => {
+          const normalizedStrategy = strategy.toLowerCase().trim();
+          if (normalizedStrategy === 'rolling') return 'low';
+          if (normalizedStrategy === 'canary') return 'medium';
+          if (normalizedStrategy === 'blue-green' || normalizedStrategy === 'bluegreen') return 'high';
+          return 'medium'; // default fallback
+        };
+
+        const criticality = strategyToCriticality(deploymentConfig.strategy);
+
         const createResponse = await fetch(`${API_URL}/services`, {
           method: 'POST',
           headers: {
@@ -276,7 +290,7 @@ export default function DeploymentConsole({ onBack, deploymentConfig }: Deployme
             gitUrl: deploymentConfig.githubRepo,
             gitBranch: 'main',
             namespace: 'default',
-            criticality: 'medium',
+            criticality: criticality,
           }),
         });
 
