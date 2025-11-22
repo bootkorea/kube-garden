@@ -1,5 +1,5 @@
 import { useState, useRef, useEffect } from 'react';
-import { Play, CheckCircle, Loader2, ShieldCheck, Terminal, Activity, ArrowLeft, Check, Sprout, Trees, Flower2, Bot, Sparkles, AlertCircle } from 'lucide-react';
+import { Play, CheckCircle, Loader2, ShieldCheck, Terminal, Activity, ArrowLeft, Check, Sprout, Trees, Flower2, Bot, Sparkles, AlertCircle, Info } from 'lucide-react';
 import { LineChart, Line, XAxis, YAxis, Tooltip, ResponsiveContainer } from 'recharts';
 import confetti from 'canvas-confetti'; // celebratory confetti
 import toast, { Toaster } from 'react-hot-toast'; // toast notifications
@@ -143,6 +143,9 @@ export default function DeploymentConsole({ onBack, deploymentConfig, isRedeploy
         ready: 'Deployment Ready',
         failed: 'Deployment Failed',
       },
+      info: {
+        strategy: 'This deployment will use Canary strategy.',
+      },
       successPanel: {
         title: 'Deployment Successful',
         description: 'Traffic is currently split 10% (New) / 90% (Old). Metrics indicate stability.',
@@ -197,6 +200,9 @@ export default function DeploymentConsole({ onBack, deploymentConfig, isRedeploy
         processing: '処理中...',
         ready: 'デプロイ完了',
         failed: 'デプロイ失敗',
+      },
+      info: {
+        strategy: 'このデプロイはCanary戦略を使用します。',
       },
       successPanel: {
         title: 'デプロイ成功',
@@ -538,6 +544,14 @@ export default function DeploymentConsole({ onBack, deploymentConfig, isRedeploy
               {isSuccess && <><Check size={20} /> {t.buttons.ready}</>}
               {isFailed && <><AlertCircle size={20} /> {t.buttons.failed}</>}
             </button>
+
+            {/* Strategy Info */}
+            {status === 'idle' && (
+              <div className="mt-3 flex items-center justify-center gap-2 text-sm text-slate-500">
+                <Info size={16} className="text-blue-500" />
+                <span>{t.info.strategy}</span>
+              </div>
+            )}
 
             {/* Timeline Status */}
             {status !== 'idle' && (
