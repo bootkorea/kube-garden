@@ -170,7 +170,7 @@ export default function DeploymentConsole({ onBack, deploymentConfig, isRedeploy
         rollbackStart: 'Rolling back to previous version...',
         rollbackDone: 'Rollback Complete.',
       },
-      logReady: isRedeploy 
+      logReady: isRedeploy
         ? "Gardener Agent: Ready to redeploy. Click 'Redeploy with Gardener Agent' to start."
         : "Gardener Agent: Ready to deploy. Click 'Deploy with Gardener Agent' to start.",
       userLabel: 'You',
@@ -228,7 +228,7 @@ export default function DeploymentConsole({ onBack, deploymentConfig, isRedeploy
         rollbackStart: '前のバージョンへロールバックしています...',
         rollbackDone: 'ロールバック完了。',
       },
-      logReady: isRedeploy 
+      logReady: isRedeploy
         ? "ガーデナーエージェント: 再デプロイ準備完了です。「ガーデナーエージェントで再デプロイ」をクリックしてください。"
         : "ガーデナーエージェント: デプロイ準備完了です。「エージェントとデプロイ」をクリックしてください。",
       userLabel: 'あなた',
@@ -240,7 +240,7 @@ export default function DeploymentConsole({ onBack, deploymentConfig, isRedeploy
   const serviceName = deploymentConfig?.serviceName || 'demo-api';
   const [status, setStatus] = useState<'idle' | 'planning' | 'running' | 'success' | 'failed'>('idle');
   const [logs, setLogs] = useState<string[]>([t.logReady]);
-  const [, setDeploymentId] = useState<string | null>(null);
+  const [deploymentId, setDeploymentId] = useState<string | null>(null);
   const logsEndRef = useRef<HTMLDivElement>(null);
 
   const API_URL = import.meta.env.VITE_API_URL;
@@ -416,7 +416,7 @@ export default function DeploymentConsole({ onBack, deploymentConfig, isRedeploy
               origin: { y: 0.6 },
               colors: ['#26ccff', '#a25afd', '#ff5e7e', '#88ff5a', '#fcff42', '#ffa62d', '#ff36ff']
             });
-            toast.success(t.toast.deploymentSuccess, { 
+            toast.success(t.toast.deploymentSuccess, {
               duration: 3000,
               icon: <CheckCircle size={24} className="text-white" />,
               style: {
@@ -440,7 +440,7 @@ export default function DeploymentConsole({ onBack, deploymentConfig, isRedeploy
               origin: { y: 0.6 },
               colors: ['#26ccff', '#a25afd', '#ff5e7e', '#88ff5a', '#fcff42', '#ffa62d', '#ff36ff']
             });
-            toast.success(t.toast.deploymentSuccess, { 
+            toast.success(t.toast.deploymentSuccess, {
               duration: 3000,
               icon: <CheckCircle size={24} className="text-white" />,
               style: {
@@ -471,33 +471,64 @@ export default function DeploymentConsole({ onBack, deploymentConfig, isRedeploy
   };
 
   const handlePromote = async () => {
+    if (!deploymentId) return;
+
     setLogs(prev => [...prev, "User: Confirmed. Promoting to 100%.", "Gardener Agent: Traffic split updated (100% New). Deployment Finalized. 🚀"]);
 
-    await sleep(1000);
+    try {
+      const response = await fetch(`${API_URL}/deploy/${deploymentId}/promote`, {
+        method: 'POST',
+      });
 
-    // Fire celebratory confetti
-    confetti({
-      particleCount: 150,
-      spread: 70,
-      origin: { y: 0.6 },
-      colors: ['#26ccff', '#a25afd', '#ff5e7e', '#88ff5a', '#fcff42', '#ffa62d', '#ff36ff']
-    });
-    toast.success(t.toast.promoteSuccess, { duration: 4000, icon: '🎉' });
+      if (!response.ok) {
+        throw new Error('Failed to promote deployment');
+      }
 
-    await sleep(2000);
-    setStatus('idle');
-    setLogs([t.logReady]);
+      await sleep(1000);
+
+      // Fire celebratory confetti
+      confetti({
+        particleCount: 150,
+        spread: 70,
+        origin: { y: 0.6 },
+        colors: ['#26ccff', '#a25afd', '#ff5e7e', '#88ff5a', '#fcff42', '#ffa62d', '#ff36ff']
+      });
+      toast.success(t.toast.promoteSuccess, { duration: 4000, icon: '🎉' });
+
+      await sleep(2000);
+      setStatus('idle');
+      setLogs([t.logReady]);
+    } catch (error) {
+      console.error('Promote error:', error);
+      toast.error('Failed to promote deployment');
+    }
   };
 
   const handleRollback = async () => {
+    if (!deploymentId) return;
+
     setLogs(prev => [...prev, "User: Rollback requested.", "Gardener Agent: Reverting traffic to stable version... Done."]);
-    toast.error(t.toast.rollbackStart);
 
-    await sleep(1500);
-    toast.success(t.toast.rollbackDone);
+    try {
+      const response = await fetch(`${API_URL}/deploy/${deploymentId}/rollback`, {
+        method: 'POST',
+      });
 
-    setStatus('idle');
-    setLogs([t.logReady]);
+      if (!response.ok) {
+        throw new Error('Failed to rollback deployment');
+      }
+
+      toast.error(t.toast.rollbackStart);
+
+      await sleep(1500);
+      toast.success(t.toast.rollbackDone);
+
+      setStatus('idle');
+      setLogs([t.logReady]);
+    } catch (error) {
+      console.error('Rollback error:', error);
+      toast.error('Failed to rollback deployment');
+    }
   };
 
   const isProcessing = status === 'planning' || status === 'running';
