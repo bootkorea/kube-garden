@@ -3,7 +3,7 @@ import { useAudio } from '../components/AudioContext';
 import { useLanguage } from '../components/LanguageContext';
 
 export default function SettingsPage() {
-  const { bgm, setBgm } = useAudio();
+  const { bgm, setBgm, volume, setVolume } = useAudio();
   const { language, setLanguage } = useLanguage();
   const copy = {
     en: {
@@ -19,6 +19,7 @@ export default function SettingsPage() {
       bgm: {
         title: 'Background Music',
         description: 'Play relaxing background music during deployment.',
+        volume: 'Volume',
       },
       ai: {
         title: 'Gardener Agent Personality',
@@ -39,6 +40,7 @@ export default function SettingsPage() {
       bgm: {
         title: 'BGM',
         description: 'デプロイ中に流してる音楽をオン·オフします。',
+        volume: '音量',
       },
       ai: {
         title: 'ガーデナーエージェントの性格',
@@ -86,20 +88,42 @@ export default function SettingsPage() {
         </div>
 
         {/* BGM Setting */}
-        <div className="flex items-center justify-between rounded-2xl border border-slate-200 bg-white p-6 shadow-sm">
-          <div className="flex items-center gap-4">
-            <div className={`rounded-full p-3 ${bgm ? 'bg-green-100 text-green-600' : 'bg-slate-100 text-slate-400'}`}>
-              {bgm ? <Volume2 size={24} /> : <VolumeX size={24} />}
+        <div className="rounded-2xl border border-slate-200 bg-white p-6 shadow-sm">
+          <div className="flex items-center justify-between mb-4">
+            <div className="flex items-center gap-4">
+              <div className={`rounded-full p-3 ${bgm ? 'bg-green-100 text-green-600' : 'bg-slate-100 text-slate-400'}`}>
+                {bgm ? <Volume2 size={24} /> : <VolumeX size={24} />}
+              </div>
+              <div>
+                <h3 className="font-bold text-slate-800">{t.bgm.title}</h3>
+                <p className="text-sm text-slate-500">{t.bgm.description}</p>
+              </div>
             </div>
-            <div>
-              <h3 className="font-bold text-slate-800">{t.bgm.title}</h3>
-              <p className="text-sm text-slate-500">{t.bgm.description}</p>
-            </div>
+            <label className="relative inline-flex cursor-pointer items-center">
+              <input type="checkbox" checked={bgm} onChange={() => setBgm(!bgm)} className="peer sr-only" />
+              <div className="peer h-7 w-12 rounded-full border border-slate-200 bg-white after:absolute after:left-[2px] after:top-[2px] after:h-6 after:w-6 after:rounded-full after:bg-slate-200 after:transition-all after:content-[''] peer-checked:border-green-500 peer-checked:bg-emerald-100 peer-checked:after:translate-x-full peer-checked:after:bg-green-500 peer-focus:outline-none peer-focus-visible:ring-2 peer-focus-visible:ring-green-400 peer-focus-visible:ring-offset-2 peer-focus-visible:ring-offset-white"></div>
+            </label>
           </div>
-          <label className="relative inline-flex cursor-pointer items-center">
-            <input type="checkbox" checked={bgm} onChange={() => setBgm(!bgm)} className="peer sr-only" />
-            <div className="peer h-7 w-12 rounded-full border border-slate-200 bg-white after:absolute after:left-[2px] after:top-[2px] after:h-6 after:w-6 after:rounded-full after:bg-slate-200 after:transition-all after:content-[''] peer-checked:border-green-500 peer-checked:bg-emerald-100 peer-checked:after:translate-x-full peer-checked:after:bg-green-500 peer-focus:outline-none peer-focus-visible:ring-2 peer-focus-visible:ring-green-400 peer-focus-visible:ring-offset-2 peer-focus-visible:ring-offset-white"></div>
-          </label>
+          {bgm && (
+            <div className="flex items-center gap-4 mt-4 pt-4 border-t border-slate-100">
+              <label className="text-sm font-medium text-slate-700 min-w-[60px]">{t.bgm.volume}</label>
+              <input
+                type="range"
+                min="0"
+                max="1"
+                step="0.01"
+                value={volume}
+                onChange={(e) => setVolume(parseFloat(e.target.value))}
+                className="flex-1 h-2 bg-slate-200 rounded-lg appearance-none cursor-pointer accent-green-500"
+                style={{
+                  background: `linear-gradient(to right, rgb(34 197 94) 0%, rgb(34 197 94) ${volume * 100}%, rgb(226 232 240) ${volume * 100}%, rgb(226 232 240) 100%)`
+                }}
+              />
+              <span className="text-sm font-medium text-slate-600 min-w-[40px] text-right">
+                {Math.round(volume * 100)}%
+              </span>
+            </div>
+          )}
         </div>
 
         {/* AI Persona Setting */}
