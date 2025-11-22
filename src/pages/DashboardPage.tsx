@@ -97,7 +97,7 @@ export default function DashboardPage({ onManage, onStartDeploy }: DashboardPage
   const [services, setServices] = useState<Service[]>([]);
   const [selectedStatus, setSelectedStatus] = useState<'healthy' | 'warning' | 'critical'>('healthy');
   const [filterStatus, setFilterStatus] = useState<'all' | 'healthy' | 'warning' | 'critical'>('all');
-  const [sortBy, setSortBy] = useState<'name' | 'lastDeploy'>('name');
+  const [sortBy, setSortBy] = useState<'name' | 'lastDeploy'>('lastDeploy');
   const { language } = useLanguage();
   const copy = {
     en: {
