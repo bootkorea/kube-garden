@@ -19,7 +19,7 @@ interface Service {
 
 interface ServiceCardProps {
   service: Service;
-  onManage: () => void;
+  onManage: (service: Service) => void;
   onDelete: (id: string) => void;
   copy: {
     version: string;
@@ -79,7 +79,7 @@ const ServiceCard = ({ service, onManage, onDelete, copy }: ServiceCardProps) =>
         </div>
       </div>
       <button
-        onClick={onManage}
+        onClick={() => onManage(service)}
         className="mt-6 flex w-full items-center justify-center gap-2 rounded-xl bg-slate-900 py-3 text-sm font-bold text-white transition-all hover:bg-green-600 hover:shadow-lg hover:shadow-green-200"
       >
         {copy.manage} <ArrowRight size={16} />
@@ -89,7 +89,7 @@ const ServiceCard = ({ service, onManage, onDelete, copy }: ServiceCardProps) =>
 };
 
 interface DashboardPageProps {
-  onManage: () => void;
+  onManage: (service: Service) => void;
   onStartDeploy: () => void;
 }
 
@@ -203,7 +203,11 @@ export default function DashboardPage({ onManage, onStartDeploy }: DashboardPage
   const t = copy[language];
 
   const API_URL = import.meta.env.VITE_API_URL;
-  const USE_MOCK = !API_URL || API_URL === 'mock';
+
+
+  if (!API_URL) {
+    console.error('VITE_API_URL is not defined');
+  }
 
   // Helper function to generate consistent random position based on service ID
   // Same ID will always get the same position
@@ -290,21 +294,7 @@ export default function DashboardPage({ onManage, onStartDeploy }: DashboardPage
   }, []);
 
   const fetchData = async () => {
-    if (USE_MOCK) {
-      // Mock data fallback
-      const mockServices = [
-        { id: '1', name: 'demo-api', status: 'healthy' as const, version: 'v1.0.2', pods: 3, lastDeploy: '2h ago', position: getPositionFromId('1') },
-        { id: '2', name: 'demo-frontend', status: 'warning' as const, version: 'v2.1.0', pods: 2, lastDeploy: '1d ago', position: getPositionFromId('2') },
-      ];
-      // Adjust positions to avoid collisions
-      const adjustedPositions = adjustPositions(mockServices);
-      const adjustedServices = mockServices.map((svc, idx) => ({
-        ...svc,
-        position: adjustedPositions[idx],
-      }));
-      setServices(adjustedServices);
-      return;
-    }
+    if (!API_URL) return;
 
     try {
       // Fetch services
@@ -312,25 +302,16 @@ export default function DashboardPage({ onManage, onStartDeploy }: DashboardPage
       if (servicesRes.ok) {
         const servicesData = await servicesRes.json();
         const list = Array.isArray(servicesData) ? servicesData : (servicesData.services || []);
-        const mappedServices = list.map((svc: any, idx: number) => {
-          const serviceId = svc.id || String(idx);
-          return {
-            id: serviceId,
-            name: svc.name || svc.serviceName || 'unknown',
-            status: 'healthy' as const,
-            version: 'latest',
-            pods: 3,
-            lastDeploy: 'N/A',
-            position: getPositionFromId(serviceId),
-            githubRepo: svc.githubRepo,
-            githubOwner: svc.githubOwner,
-          };
-        });
-        // Adjust positions to avoid collisions
-        const adjustedPositions = adjustPositions(mappedServices);
-        const adjustedServices = mappedServices.map((svc: Service, idx: number) => ({
-          ...svc,
-          position: adjustedPositions[idx],
+        const mappedServices = list.map((svc: any, idx: number) => ({
+          id: svc.id || String(idx),
+          name: svc.name || svc.serviceName || 'unknown',
+          status: 'healthy' as const,
+          version: 'latest',
+          pods: 3,
+          lastDeploy: 'N/A',
+          position: { x: 25 + idx * 50, y: 50 },
+          githubRepo: svc.gitUrl || svc.githubRepo,
+          githubOwner: svc.githubOwner,
         }));
         setServices(adjustedServices);
       }
@@ -349,10 +330,7 @@ export default function DashboardPage({ onManage, onStartDeploy }: DashboardPage
   const handleDeleteService = async (serviceId: string) => {
     if (!confirm(t.confirmDelete)) return;
 
-    if (USE_MOCK) {
-      setServices(services.filter(s => s.id !== serviceId));
-      return;
-    }
+    if (!API_URL) return;
 
     try {
       const response = await fetch(`${API_URL}/services/${serviceId}`, {
@@ -403,7 +381,6 @@ export default function DashboardPage({ onManage, onStartDeploy }: DashboardPage
         <div>
           <h1 className="text-3xl font-bold text-slate-800 font-logo">{t.title}</h1>
           <p className="text-slate-500">{t.subtitle}</p>
-          {USE_MOCK && <p className="text-xs text-amber-600 mt-2">{t.mock}</p>}
         </div>
         <button
           onClick={onStartDeploy}
@@ -412,43 +389,31 @@ export default function DashboardPage({ onManage, onStartDeploy }: DashboardPage
           {t.startButton}
         </button>
       </header>
-
-      {/* Garden Visualization with Health Check */}
-      <div className="mb-10 flex flex-col lg:flex-row gap-6">
-        {/* Garden Visualization */}
-        <div className="flex-1 relative rounded-3xl shadow-xl overflow-visible" style={{ aspectRatio: '16/8' }}>
-          <div className="absolute inset-0 rounded-3xl overflow-hidden">
-            <img
-              src="/garden.png"
-              alt={t.gardenAlt}
-              className="w-full h-full object-cover"
-            />
-          </div>
-          {/* Sprouts positioned on the garden */}
-          {services.map((service) => {
-            const isHealthy = service.status === 'healthy';
-            const showTooltipBelow = service.position.y < 30; // Show tooltip below if service is in top 30%
-            return (
-              <div
-                key={service.id}
-                className="absolute group cursor-pointer transition-all hover:scale-125 z-10"
-                style={{
-                  left: `${service.position.x}%`,
-                  top: `${service.position.y}%`,
-                  transform: 'translate(-50%, -50%)',
-                }}
-                onClick={() => onManage()}
-              >
-                <div className="relative">
-                  <div className={`rounded-full p-3 shadow-lg transition-all ${isHealthy
-                    ? 'bg-green-100 text-green-600 border-2 border-green-300'
-                    : 'bg-amber-100 text-amber-600 border-2 border-amber-300'
-                    }`}>
-                    <Sprout size={32} strokeWidth={2} />
-                  </div>
-                  {/* Tooltip on hover */}
-                  <div className={`absolute left-1/2 transform -translate-x-1/2 opacity-0 group-hover:opacity-100 transition-opacity pointer-events-none z-20 ${
-                    showTooltipBelow ? 'top-full mt-2' : 'bottom-full mb-2'
+      {/* Garden Visualization */}
+      <div className="mb-10 relative w-full max-w-2xl rounded-3xl overflow-hidden shadow-xl" style={{ aspectRatio: '16/8' }}>
+        <img
+          src="/garden.png"
+          alt={t.gardenAlt}
+          className="w-full h-full object-cover"
+        />
+        {/* Sprouts positioned on the garden */}
+        {services.map((service) => {
+          const isHealthy = service.status === 'healthy';
+          return (
+            <div
+              key={service.id}
+              className="absolute group cursor-pointer transition-all hover:scale-125"
+              style={{
+                left: `${service.position.x}%`,
+                top: `${service.position.y}%`,
+                transform: 'translate(-50%, -50%)',
+              }}
+              onClick={() => onManage(service)}
+            >
+              <div className="relative">
+                <div className={`rounded-full p-3 shadow-lg transition-all ${isHealthy
+                  ? 'bg-green-100 text-green-600 border-2 border-green-300'
+                  : 'bg-amber-100 text-amber-600 border-2 border-amber-300'
                   }`}>
                     <div className="bg-slate-900 text-white text-xs font-bold px-3 py-2 rounded-lg whitespace-nowrap shadow-lg">
                       {service.name}
