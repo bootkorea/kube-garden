@@ -504,14 +504,6 @@ export default function DeploymentConsole({ onBack, deploymentConfig }: Deployme
             {/* Animated plant visualization */}
             <GrowingPlant status={status} labels={t.plant} />
 
-            <div>
-              <label className="mb-2 block text-sm font-bold text-slate-700">{t.strategyLabel}</label>
-              <select className="w-full rounded-xl border border-slate-200 bg-slate-50 p-4 text-slate-700 focus:border-green-500 focus:outline-none transition-all">
-                <option>{t.strategyOptions.canary}</option>
-                <option>{t.strategyOptions.blue}</option>
-              </select>
-            </div>
-
             <button
               onClick={handleDeploy}
               disabled={status !== 'idle'}
