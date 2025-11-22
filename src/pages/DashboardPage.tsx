@@ -104,7 +104,7 @@ export default function DashboardPage({ onManage, onStartDeploy }: DashboardPage
       title: 'My Garden 🌿',
       subtitle: 'Manage your Kubernetes deployments with peace of mind.',
       mock: '⚠️ Running in MOCK mode',
-      startButton: '🌱 Start Deployment',
+      startButton: '+ New Deployment  🌱',
       gardenAlt: 'Digital Garden',
       confirmDelete: 'Are you sure you want to delete this service?',
       deleteErrorPrefix: 'Error deleting service:',
