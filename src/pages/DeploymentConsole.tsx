@@ -227,7 +227,7 @@ export default function DeploymentConsole({ onBack, deploymentConfig }: Deployme
   const serviceName = deploymentConfig?.serviceName || 'demo-api';
   const [status, setStatus] = useState<'idle' | 'planning' | 'running' | 'success' | 'failed'>('idle');
   const [logs, setLogs] = useState<string[]>([t.logReady]);
-  const [, setDeploymentId] = useState<string | null>(null);
+  const [deploymentId, setDeploymentId] = useState<string | null>(null);
   const logsEndRef = useRef<HTMLDivElement>(null);
 
   const API_URL = import.meta.env.VITE_API_URL;
@@ -432,33 +432,61 @@ export default function DeploymentConsole({ onBack, deploymentConfig }: Deployme
   };
 
   const handlePromote = async () => {
-    setLogs(prev => [...prev, "User: Confirmed. Promoting to 100%.", "AI Agent: Traffic split updated (100% New). Deployment Finalized. 🚀"]);
+    if (!deploymentId) return;
 
-    await sleep(1000);
+    setLogs(prev => [...prev, "User: Confirmed. Promoting to 100%...", "AI Agent: Sending promotion command..."]);
 
-    // Fire celebratory confetti
-    confetti({
-      particleCount: 150,
-      spread: 70,
-      origin: { y: 0.6 },
-      colors: ['#26ccff', '#a25afd', '#ff5e7e', '#88ff5a', '#fcff42', '#ffa62d', '#ff36ff']
-    });
-    toast.success(t.toast.promoteSuccess, { duration: 4000, icon: '🎉' });
+    try {
+      const response = await fetch(`${API_URL}/deploy/${deploymentId}/promote`, {
+        method: 'POST'
+      });
 
-    await sleep(2000);
-    setStatus('idle');
-    setLogs([t.logReady]);
+      if (!response.ok) {
+        throw new Error('Failed to promote deployment');
+      }
+
+      setLogs(prev => [...prev, "AI Agent: Promotion triggered. Traffic split updating to 100% New. 🚀"]);
+
+      // Fire celebratory confetti
+      confetti({
+        particleCount: 150,
+        spread: 70,
+        origin: { y: 0.6 },
+        colors: ['#26ccff', '#a25afd', '#ff5e7e', '#88ff5a', '#fcff42', '#ffa62d', '#ff36ff']
+      });
+      toast.success(t.toast.promoteSuccess, { duration: 4000, icon: '🎉' });
+
+      // Status will be updated by polling
+    } catch (error) {
+      console.error('Promotion error:', error);
+      toast.error('Failed to promote deployment');
+      setLogs(prev => [...prev, "Error: Failed to trigger promotion."]);
+    }
   };
 
   const handleRollback = async () => {
-    setLogs(prev => [...prev, "User: Rollback requested.", "AI Agent: Reverting traffic to stable version... Done."]);
-    toast.error(t.toast.rollbackStart);
+    if (!deploymentId) return;
 
-    await sleep(1500);
-    toast.success(t.toast.rollbackDone);
+    setLogs(prev => [...prev, "User: Rollback requested.", "AI Agent: Initiating rollback sequence..."]);
 
-    setStatus('idle');
-    setLogs([t.logReady]);
+    try {
+      const response = await fetch(`${API_URL}/deploy/${deploymentId}/rollback`, {
+        method: 'POST'
+      });
+
+      if (!response.ok) {
+        throw new Error('Failed to rollback deployment');
+      }
+
+      setLogs(prev => [...prev, "AI Agent: Rollback triggered. Reverting traffic to stable version."]);
+      toast.success(t.toast.rollbackDone);
+
+      // Status will be updated by polling
+    } catch (error) {
+      console.error('Rollback error:', error);
+      toast.error('Failed to rollback deployment');
+      setLogs(prev => [...prev, "Error: Failed to trigger rollback."]);
+    }
   };
 
   const isProcessing = status === 'planning' || status === 'running';

@@ -36,6 +36,18 @@ function App() {
     setCurrentPage('dashboard');
   };
 
+  const handleManageService = (service: any) => {
+    const config: DeploymentConfig = {
+      serviceName: service.name,
+      githubRepo: service.githubRepo || '',
+      strategy: 'canary', // Default strategy for redeploy
+      description: 'Redeploy from dashboard',
+      environment: 'production',
+    };
+    setDeploymentConfig(config);
+    setCurrentPage('deploy');
+  };
+
   return (
     // Lock the layout to the viewport height and hide overflow to avoid body scroll
     <div className="flex h-screen w-screen flex-col overflow-hidden bg-stone-50 font-sans text-slate-900">
@@ -55,7 +67,7 @@ function App() {
           <div className="h-full w-full overflow-y-auto">
             {currentPage === 'dashboard' && (
               <DashboardPage
-                onManage={() => setCurrentPage('deploy')}
+                onManage={handleManageService}
                 onStartDeploy={() => setCurrentPage('launch')}
               />
             )}

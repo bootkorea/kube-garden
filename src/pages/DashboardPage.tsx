@@ -19,7 +19,7 @@ interface Service {
 
 interface ServiceCardProps {
   service: Service;
-  onManage: () => void;
+  onManage: (service: Service) => void;
   onDelete: (id: string) => void;
   copy: {
     version: string;
@@ -79,7 +79,7 @@ const ServiceCard = ({ service, onManage, onDelete, copy }: ServiceCardProps) =>
         </div>
       </div>
       <button
-        onClick={onManage}
+        onClick={() => onManage(service)}
         className="mt-6 flex w-full items-center justify-center gap-2 rounded-xl bg-slate-900 py-3 text-sm font-bold text-white transition-all hover:bg-green-600 hover:shadow-lg hover:shadow-green-200"
       >
         {copy.manage} <ArrowRight size={16} />
@@ -89,7 +89,7 @@ const ServiceCard = ({ service, onManage, onDelete, copy }: ServiceCardProps) =>
 };
 
 interface DashboardPageProps {
-  onManage: () => void;
+  onManage: (service: Service) => void;
   onStartDeploy: () => void;
 }
 
@@ -135,22 +135,18 @@ export default function DashboardPage({ onManage, onStartDeploy }: DashboardPage
   const t = copy[language];
 
   const API_URL = import.meta.env.VITE_API_URL;
-  const USE_MOCK = !API_URL || API_URL === 'mock';
+
+
+  if (!API_URL) {
+    console.error('VITE_API_URL is not defined');
+  }
 
   useEffect(() => {
     fetchData();
   }, []);
 
   const fetchData = async () => {
-    if (USE_MOCK) {
-      // Mock data fallback
-      const mockServices = [
-        { id: '1', name: 'demo-api', status: 'healthy' as const, version: 'v1.0.2', pods: 3, lastDeploy: '2h ago', position: { x: 25, y: 50 } },
-        { id: '2', name: 'demo-frontend', status: 'warning' as const, version: 'v2.1.0', pods: 2, lastDeploy: '1d ago', position: { x: 75, y: 50 } },
-      ];
-      setServices(mockServices);
-      return;
-    }
+    if (!API_URL) return;
 
     try {
       // Fetch services
@@ -166,7 +162,7 @@ export default function DashboardPage({ onManage, onStartDeploy }: DashboardPage
           pods: 3,
           lastDeploy: 'N/A',
           position: { x: 25 + idx * 50, y: 50 },
-          githubRepo: svc.githubRepo,
+          githubRepo: svc.gitUrl || svc.githubRepo,
           githubOwner: svc.githubOwner,
         }));
         setServices(mappedServices);
@@ -186,10 +182,7 @@ export default function DashboardPage({ onManage, onStartDeploy }: DashboardPage
   const handleDeleteService = async (serviceId: string) => {
     if (!confirm(t.confirmDelete)) return;
 
-    if (USE_MOCK) {
-      setServices(services.filter(s => s.id !== serviceId));
-      return;
-    }
+    if (!API_URL) return;
 
     try {
       const response = await fetch(`${API_URL}/services/${serviceId}`, {
@@ -212,7 +205,6 @@ export default function DashboardPage({ onManage, onStartDeploy }: DashboardPage
         <div>
           <h1 className="text-3xl font-bold text-slate-800">{t.title}</h1>
           <p className="text-slate-500">{t.subtitle}</p>
-          {USE_MOCK && <p className="text-xs text-amber-600 mt-2">{t.mock}</p>}
         </div>
         <button
           onClick={onStartDeploy}
@@ -241,7 +233,7 @@ export default function DashboardPage({ onManage, onStartDeploy }: DashboardPage
                 top: `${service.position.y}%`,
                 transform: 'translate(-50%, -50%)',
               }}
-              onClick={() => onManage()}
+              onClick={() => onManage(service)}
             >
               <div className="relative">
                 <div className={`rounded-full p-3 shadow-lg transition-all ${isHealthy
