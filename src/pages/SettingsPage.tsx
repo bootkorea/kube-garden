@@ -1,4 +1,4 @@
-import { Volume2, VolumeX, Bot, Languages } from 'lucide-react';
+import { Volume2, VolumeX, Languages } from 'lucide-react';
 import { useAudio } from '../components/AudioContext';
 import { useLanguage } from '../components/LanguageContext';
 
@@ -103,6 +103,7 @@ export default function SettingsPage() {
         </div>
 
         {/* AI Persona Setting */}
+        {/* TODO: Implement AI agent personality selection
         <div className="flex items-center justify-between rounded-2xl border border-slate-200 bg-white p-6 shadow-sm">
           <div className="flex items-center gap-4">
             <div className="rounded-full bg-blue-50 p-3 text-blue-600">
@@ -119,6 +120,7 @@ export default function SettingsPage() {
             ))}
           </select>
         </div>
+        */}
       </div>
     </div>
   );
