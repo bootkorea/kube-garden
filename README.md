@@ -10,7 +10,7 @@ Kube Garden is a garden-themed deployment service platform. It helps teams treat
 - 🌍 **Internationalization**: Supports English and Japanese (日本語)
 - 🎵 **Audio Experience**: Optional background music during deployments
 - 📜 **Deployment History**: Track all deployment activities and growth records
-- ⚙️ **Settings Page**: Customize language, BGM, and Gardener Agent personality
+- ⚙️ **Settings Page**: Customize language and BGM
 
 ## Tech Stack
 
@@ -168,17 +168,3 @@ VITE_API_URL=https://your-api-endpoint.com
 - **Canary Deployment**: Gradual rollout with monitoring
 - **Blue-Green Deployment**: Instant switch between environments
 - **Rolling Update**: Sequential pod updates
-
-## Contributing
-
-1. Create a feature branch from `main`
-2. Make your changes
-3. Run `npm run lint` and `npm run build` before committing
-4. Open a PR with:
-   - Clear description of changes
-   - Screenshots/GIFs of UI changes
-   - Checklist of tests performed
-
-## License
-
-MIT © 2025 term2-bear Team @ Softbank Hackathon
